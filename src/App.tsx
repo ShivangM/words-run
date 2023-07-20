@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import { useEffect, useState } from 'react';
 import { socket } from './utils/socket';
-import CreateRoom from './pages/CreateRoom';
+import GameSettings from './pages/GameSettings';
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -29,14 +29,14 @@ function App() {
   }, []);
 
   return (
-    <Layout>
-      <Router>
+    <Router>
+      <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/Create-Room" element={<CreateRoom />} />
+          <Route path="/game-settings" element={<GameSettings />} />
         </Routes>
-      </Router>
-    </Layout>
+      </Layout>
+    </Router>
   );
 }
 
