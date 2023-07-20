@@ -1,6 +1,6 @@
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type Inputs = {
   dificulty: string;
@@ -37,11 +37,17 @@ const CreateRoom = () => {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<Inputs>();
-  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
+
+  const navigate = useNavigate();
+
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    navigate('/game', { state: data });
+  };
 
   const { state } = useLocation();
-  const mode = state?.mode;
+  const mode = watch('mode') || state.mode;
 
   return (
     <div className="min-h-screen">
@@ -130,42 +136,12 @@ const CreateRoom = () => {
                   />
                 </div>
 
-                {mode === 'friends' ? (
-                  <div className="mb-4">
-                    <label
-                      htmlFor="duration"
-                      className="block text-gray-700 font-bold mb-2"
-                    >
-                      Room Code:
-                    </label>
-                    <input
-                      type="text"
-                      className='"w-full text-black px-4 py-2 border rounded-md focus:outline-none focus:border-blue-500"'
-                      {...register('roomCode', {
-                        required: 'Duration field is required',
-                        value: mode,
-                      })}
-                    />
-                  </div>
-                ) : null}
-
-                {mode === 'friends' ? (
-                  <button
-                    type="submit"
-                    className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
-                  >
-                    Start Test
-                  </button>
-                ) : (
-                  <div className="">
-                    <button
-                      type="submit"
-                      className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
-                    >
-                      Start Test
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="submit"
+                  className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
+                >
+                  Start Test
+                </button>
               </form>
             </div>
           </div>
