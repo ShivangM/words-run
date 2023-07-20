@@ -8,7 +8,7 @@ type Props = {
 
 const Layout = ({ children }: Props) => {
   return (
-    <div className="bg-dark w-full h-full min-h-screen">
+    <div className="bg-dark text-white w-full h-full min-h-screen">
       <Navbar />
       {children}
       <Footer />
