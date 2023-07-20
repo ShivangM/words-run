@@ -1,9 +1,11 @@
 import './App.css';
+
 import Layout from './components/Layout/Layout';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import { useEffect, useState } from 'react';
 import { socket } from './utils/socket';
+import CreateRoom from './pages/CreateRoom';
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -31,6 +33,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/Create-Room" element={<CreateRoom />} />
         </Routes>
       </Router>
     </Layout>
