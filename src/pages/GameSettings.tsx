@@ -50,15 +50,15 @@ const CreateRoom = () => {
   const mode = watch('mode') || state.mode;
 
   return (
-    <div className="min-h-screen">
-      <div className="grid grid-cols-2 gap-4 p-10 h-screen">
+    <div className="">
+      <div className="grid grid-cols-1 max-w-7xl mx-auto lg:grid-cols-2 gap-4 p-6 sm:p-10 h-full lg:h-screen">
         <div className="container rounded-xl bg-primary2 mx-auto p-4">
-          <h1 className=" text text-secondary text-center text-4xl font-bold py-4">
+          <h1 className=" text text-secondary text-center text-3xl sm:text-4xl font-bold py-4">
             Game Settings
           </h1>
 
           <div className="container mx-auto p-4">
-            <h1 className="text-2xl text-center  mb-4">
+            <h1 className="text-xl sm:text-2xl text-center  mb-4">
               Choose Difficulty and Duration
             </h1>
             <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
