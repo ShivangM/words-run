@@ -1,17 +1,22 @@
 import { motion } from 'framer-motion';
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { GameStatus } from '../interfaces/game.d';
 import useGameStore from '../store/gameStore';
 import WaitingScreen from '../components/Game/WaitingScreen';
 import { toast } from 'react-toastify';
 import Status from '../components/Game/Status';
 import useUserStore from '../store/userStore';
+import { socket } from '../utils/socket';
 
 type Props = {};
 
 const Game = (props: Props) => {
   const { state } = useLocation();
+  const [params] = useSearchParams();
+
+  const [user] = useUserStore((state) => [state.user]);
+
   const [
     decrementTimer,
     timer,
@@ -28,6 +33,7 @@ const Game = (props: Props) => {
     correctWordsArray,
     incorrectWordsArray,
     setPlayers,
+    setRoomId,
   ] = useGameStore((state) => [
     state.decrementTimer,
     state.timer,
@@ -44,6 +50,7 @@ const Game = (props: Props) => {
     state.correctWordsArray,
     state.incorrectWordsArray,
     state.setPlayers,
+    state.setRoomId,
   ]);
 
   useEffect(() => {
@@ -71,9 +78,11 @@ const Game = (props: Props) => {
   }, [gameStatus, decrementTimer, timer, endGame]);
 
   useEffect(() => {
-    setDuration(state.duration * 60);
-    setMode(state.mode);
-    setPlayers(state.players);
+    if (state) {
+      setDuration(state.duration * 60);
+      setMode(state.mode);
+      setPlayers(state.players);
+    }
     return () => {};
   }, [state, setDuration, setMode, setPlayers]);
 
@@ -86,9 +95,21 @@ const Game = (props: Props) => {
     return () => {
       setGameStatus(GameStatus.WAITING);
     };
+  }, [setGameStatus]);
+
+  useEffect(() => {
+    socket.on('activeUsers', (users) => {
+      console.log(users);
+      setPlayers(users);
+    });
   }, []);
 
-  const [user] = useUserStore((state) => [state.user]);
+  useEffect(() => {
+    if (params.get('roomId') && user) {
+      setRoomId(params.get('roomId')!);
+      socket.emit('joinRoom', { roomId: params.get('roomId'), user: user });
+    }
+  }, []);
 
   return (
     <div className="p-10 relative">
@@ -101,15 +122,16 @@ const Game = (props: Props) => {
         {gameStatus === GameStatus.PLAYING ? (
           <div className="space-y-4">
             <Status />
-            <p className="text-base w-full space-x-2 unselectable text-white">
-              {paragraph?.split(' ').map((word, idx) => {
+            <p className="text-sm font-bold text-white">{paragraph}</p>
+            <p className="text-base flex items-center flex-wrap unselectable w-full space-x-2 text-white">
+              {typed?.split(' ').map((word, idx) => {
                 return (
                   <span
                     key={idx}
                     className={`${
                       correctWordsArray.includes(word)
                         ? 'text-green-500'
-                        : 'text-white'
+                        : 'text-red-400'
                     }`}
                   >
                     {word}
@@ -128,8 +150,7 @@ const Game = (props: Props) => {
           </div>
         ) : null}
 
-        {gameStatus === GameStatus.WAITING ? <WaitingScreen /> : null}
-        {gameStatus === GameStatus.FINISHED ? <WaitingScreen /> : null}
+        <WaitingScreen />
       </div>
     </div>
   );

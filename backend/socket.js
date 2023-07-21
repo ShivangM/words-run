@@ -1,100 +1,142 @@
-const { default: generateRoomCode } = require('./utils/generateRoomCode');
+const { db } = require('./utils/firebase');
+const { generateRoomCode } = require('./utils/generateRoomCode');
 
 module.exports = function Socket(io) {
   io.on('connection', (socket) => {
     const id = socket.id;
     socket.join(id);
     console.log('SOMEONE JOINED ' + id);
-    socket.on(
-      'send-message',
-      ({ recipients, type, content, createdAt, roomId, sender }) => {}
-    );
-
-    const rooms = {}; //object to store active users in every room
 
     //Handle room creation
-    socket.on('createRoom', ({ name, image }) => {
+    // Handle room creation
+    socket.on('createRoom', async (user) => {
       const roomId = generateRoomCode();
-      // If the room doesn't exist, create it and add the creator to it
-      if (!rooms[roomId]) {
-        rooms[roomId] = []; // Create an empty array for the new room
-        socket.join(roomId);
+      const existingRoom = await db.collection('rooms').doc(roomId).get();
+
+      if (!existingRoom.exists) {
+        await db.collection('rooms').doc(roomId).set({});
+
         console.log(`Room ${roomId} created by ${socket.id}`);
+        socket.join(roomId);
 
-        // Create a user object with socket ID, name, and image
-        const user = { id: socket.id, name, image };
+        // Store user data with socket.id as the document key
+        await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .doc(socket.id)
+          .set(user);
 
-        // Add user to the list of active users in the room
-        rooms.roomId.push(user);
+        const usersSnapshot = await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .get();
+        const users = usersSnapshot.docs.map((doc) => doc.data());
 
         socket.emit('roomCreated', roomId);
-        // Emit the list of active users in the room to all users in the room
-        io.to(roomId).emit('activeUsers', rooms[roomId]);
+        io.to(roomId).emit('activeUsers', users);
       } else {
         // Room with this ID already exists
         socket.emit('roomError', 'Room with this ID already exists');
       }
     });
 
-    //Handle Joining a Room
-    socket.on('joinRoom', ({ roomId, name, image }) => {
-      if (!rooms[roomId]) {
+    // Handle Joining a Room
+    socket.on('joinRoom', async ({ roomId, user }) => {
+      const existingRoom = await db.collection('rooms').doc(roomId).get();
+
+      if (!existingRoom.exists) {
         // Room with this ID does not exist
         socket.emit('roomError', 'Room with this ID does not exist');
-      } else if (rooms[roomId].length >= 6) {
-        // Room is already full (limit of 6 participants)
-        socket.emit(
-          'roomError',
-          'Room is already full (limit of 6 participants)'
-        );
       } else {
-        // Add the participant to the room
-        socket.join(roomId);
-        console.log(`${socket.id} joined room ${roomId}`);
+        const roomData = existingRoom.data();
+        const roomUsersSnapshot = await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .get();
+        const roomUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
 
-        // Create a user object with socket ID, name, and image
-        const user = { id: socket.id, name, image };
+        socket.join(roomId); // Change to socket.join(roomId)
 
-        // Add user to the list of active users in the room
-        rooms.roomId.push(user);
+        if (roomUsers.length >= 6) {
+          // Room is already full (limit of 6 participants)
+          socket.emit(
+            'roomError',
+            'Room is already full (limit of 6 participants)'
+          );
+        } else {
+          // Add the participant to the room if not already present
+          if (!roomUsers.some((u) => u.id === user.id)) {
+            await db
+              .collection('rooms')
+              .doc(roomId)
+              .collection('users')
+              .doc(socket.id)
+              .set(user);
+            console.log(`${socket.id} joined room ${roomId}`);
+          }
 
-        // Emit the list of active users in the room to all users in the room
-        io.to(roomId).emit('activeUsers', rooms[roomId]);
+          // Get the updated list of active users in the room
+          const updatedUsersSnapshot = await db
+            .collection('rooms')
+            .doc(roomId)
+            .collection('users')
+            .get();
+          const updatedUsers = updatedUsersSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+
+          // Emit the list of active users in the room to all users in the same room
+          io.to(roomId).emit('activeUsers', updatedUsers); // Change to io.to(roomId)
+        }
       }
     });
 
     // Handle progress updates
     socket.on('progressUpdate', (data) => {
       const { roomId, progress } = data;
-      // Broadcast the progress to all other users in the same room
       io.to(roomId).emit('progressUpdate', { userId: socket.id, progress });
     });
 
     // Handle disconnection
+    const handleDisconnect = async (socketId) => {
+      console.log(`User with ID ${socketId} disconnected`);
+
+      // Find the room where the user was located
+      const roomsRef = db.collection('rooms');
+      const snapshot = await roomsRef
+        .where(`users.${socketId}`, '!=', null)
+        .get();
+
+      snapshot.forEach(async (doc) => {
+        const roomId = doc.id;
+
+        // Remove the user from the room upon disconnection
+        await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .doc(socketId)
+          .delete();
+
+        // Get the updated list of active users in the room
+        const roomUsersSnapshot = await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .get();
+        const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
+
+        // Emit the list of active users in the room to all users in the room
+        io.to(roomId).emit('activeUsers', updatedUsers);
+      });
+    };
+
+    // Set up the disconnection listener
     socket.on('disconnect', () => {
-      console.log(`User with ID ${socket.id} disconnected`);
-
-      // Remove the user from the list of active users in the room upon disconnection
-      for (const roomId in rooms) {
-        const index = rooms[roomId].findIndex((user) => user.id === socket.id);
-        if (index !== -1) {
-          rooms[roomId].splice(index, 1);
-
-          // Emit the list of active users in the room to all users in the room
-          io.to(roomId).emit('activeUsers', rooms[roomId]);
-          break;
-        }
-      }
-    });
-
-    // Handle client's request for active users in a room
-    socket.on('getActiveUsers', (roomId) => {
-      // Send the list of active users in the requested room back to the client
-      if (rooms[roomId]) {
-        io.to(socket.id).emit('activeUsers', rooms[roomId]);
-      } else {
-        io.to(socket.id).emit('activeUsers', []);
-      }
+      handleDisconnect(socket.id);
     });
   });
 };

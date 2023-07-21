@@ -4,11 +4,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { socket } from '../utils/socket';
 import { useEffect } from 'react';
 import useUserStore from '../store/userStore';
+import { GameModes } from '../interfaces/game.d';
 
 type Inputs = {
   difficulty: string;
   duration: string;
-  mode: string;
+  mode: GameModes;
   roomCode: string;
 };
 
@@ -50,24 +51,21 @@ const CreateRoom = () => {
   const [user] = useUserStore((state) => [state.user]);
 
   const onSubmit: SubmitHandler<Inputs> = (data) => {
-    if (mode === 'online') {
-    } else if (mode === 'single') {
-      navigate('/game', { state: { ...data, players: [user] } });
+    if (mode === GameModes.ONLINE) {
+    } else if (mode === GameModes.SINGLE_PLAYER) {
+      navigate('/game', { state: data });
     } else {
-      socket.emit('createRoom', data);
-      // navigate('/game', { state: data });
+      socket.emit('createRoom', user);
     }
   };
 
   useEffect(() => {
     socket.on('roomCreated', (roomId) => {
-      navigate('/game', {
-        state: {
-          roomId,
-        },
+      navigate(`/game?roomId=${roomId}`, {
+        state: { duration: watch('duration'), difficulty: watch('difficulty') },
       });
     });
-  }, []);
+  }, [navigate, watch]);
 
   return (
     <div className="">
@@ -145,9 +143,13 @@ const CreateRoom = () => {
                     })}
                     className="w-full text-black px-4 py-2 border rounded-md focus:outline-none focus:border-blue-500"
                   >
-                    <option value="single">Single Player</option>
-                    <option value="friends">Play With Friends</option>
-                    <option value="online">Join Online</option>
+                    <option value={GameModes.SINGLE_PLAYER}>
+                      Single Player
+                    </option>
+                    <option value={GameModes.WITH_FRIENDS}>
+                      Play With Friends
+                    </option>
+                    <option value={GameModes.ONLINE}>Join Online</option>
                   </select>
                   <ErrorMessage
                     errors={errors}
@@ -160,9 +162,9 @@ const CreateRoom = () => {
                   type="submit"
                   className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
                 >
-                  {mode === 'single'
+                  {mode === GameModes.SINGLE_PLAYER
                     ? 'Start Game'
-                    : mode === 'online'
+                    : mode === GameModes.ONLINE
                     ? 'Join Room'
                     : 'Create Room'}
                 </button>

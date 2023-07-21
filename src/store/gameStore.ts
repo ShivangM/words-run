@@ -1,11 +1,12 @@
+import { User } from 'firebase/auth';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { GameStatus, Player } from '../interfaces/game.d';
+import { GameModes, GameStatus } from '../interfaces/game.d';
 import fetchParagraphForGame from '../lib/fetchParagraphForGame';
 import calculateWordsPerMinute from '../utils/calculateAccuracyAndWPM';
 
 interface GameState {
-  mode: string;
+  mode: GameModes;
   timer: number;
   duration: number;
   difficulty: string;
@@ -15,22 +16,24 @@ interface GameState {
   wpm: number;
   typed: string;
   accuracy: number;
-  players: Player[];
+  players: User[];
   correctWordsArray: string[];
   incorrectWordsArray: string[];
-  setPlayers: (players: Player[]) => void;
+  roomId: string | null;
+  setPlayers: (players: User[]) => void;
   setTyped: (typed: string) => void;
-  setMode: (mode: string) => void;
+  setMode: (mode: GameModes) => void;
   startGame: () => void;
   endGame: () => void;
   setDuration: (duration: number) => void;
   decrementTimer: () => void;
   setGameStatus: (gameStatus: GameStatus) => void;
+  setRoomId: (roomId: string) => void;
 }
 
 const useGameStore = create<GameState>()(
   devtools((set, get) => ({
-    mode: 'single',
+    mode: GameModes.SINGLE_PLAYER,
     timer: 0,
     duration: 0,
     difficulty: 'easy',
@@ -43,6 +46,9 @@ const useGameStore = create<GameState>()(
     players: [],
     correctWordsArray: [],
     incorrectWordsArray: [],
+    roomId: null,
+
+    setRoomId: (roomId) => set({ roomId }),
 
     setPlayers: (players) => set({ players }),
 

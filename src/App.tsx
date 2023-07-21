@@ -7,10 +7,11 @@ import { useEffect, useState } from 'react';
 import { socket } from './utils/socket';
 import GameSettings from './pages/GameSettings';
 import Game from './pages/Game';
+import useGameStore from './store/gameStore';
 
 function App() {
-  
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [setPlayers] = useGameStore((state) => [state.setPlayers]);
 
   useEffect(() => {
     function onConnect() {
@@ -22,6 +23,7 @@ function App() {
     }
 
     socket.on('connect', onConnect);
+
     socket.on('disconnect', onDisconnect);
 
     return () => {

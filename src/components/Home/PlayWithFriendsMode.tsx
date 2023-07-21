@@ -1,4 +1,5 @@
 import { AiOutlineTeam } from 'react-icons/ai';
+import { GameModes } from '../../interfaces/game.d';
 import GameModeButton from './GameModeButton';
 
 type Props = {};
@@ -13,7 +14,7 @@ const PlayWithFriendsMode = (props: Props) => {
         </span>{' '}
       </h3>
 
-      <GameModeButton mode="friends" text="Create Room" />
+      <GameModeButton mode={GameModes.WITH_FRIENDS} text="Create Room" />
     </div>
   );
 };

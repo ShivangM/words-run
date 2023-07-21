@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
+import { GameModes } from '../../interfaces/game';
 
 type Props = {
   text: string;
-  mode: string;
+  mode: GameModes;
 };
 
 const GameModeButton = ({ text, mode }: Props) => {

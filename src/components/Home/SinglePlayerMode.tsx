@@ -1,6 +1,7 @@
 import { PiPencilCircleFill } from 'react-icons/pi';
 import GameModeButton from './GameModeButton';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { GameModes } from '../../interfaces/game.d';
 
 type Props = {};
 
@@ -26,7 +27,10 @@ const SinglePlayerMode = (props: Props) => {
       </h3>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <GameModeButton mode="single" text="Start Practicing" />
+        <GameModeButton
+          mode={GameModes.SINGLE_PLAYER}
+          text="Start Practicing"
+        />
       </form>
     </div>
   );
