@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { GameStatus } from '../interfaces/game.d';
+import { GameStatus, Player } from '../interfaces/game.d';
 import fetchParagraphForGame from '../lib/fetchParagraphForGame';
 import calculateWordsPerMinute from '../utils/calculateAccuracyAndWPM';
 
@@ -15,6 +15,10 @@ interface GameState {
   wpm: number;
   typed: string;
   accuracy: number;
+  players: Player[];
+  correctWordsArray: string[];
+  incorrectWordsArray: string[];
+  setPlayers: (players: Player[]) => void;
   setTyped: (typed: string) => void;
   setMode: (mode: string) => void;
   startGame: () => void;
@@ -36,17 +40,29 @@ const useGameStore = create<GameState>()(
     gameStatus: GameStatus.WAITING,
     typed: '',
     accuracy: 0,
+    players: [],
+    correctWordsArray: [],
+    incorrectWordsArray: [],
+
+    setPlayers: (players) => set({ players }),
 
     setGameStatus: (gameStatus) => set({ gameStatus }),
 
     setTyped: (typed) => {
       set({ typed });
-      const { wordsPerMinute, accuracy } = calculateWordsPerMinute(
-        get().paragraph!,
-        typed,
-        get().duration / 60
-      );
-      set({ wpm: wordsPerMinute, accuracy });
+      const {
+        wordsPerMinute,
+        accuracy,
+        correctWordsArray,
+        incorrectWordsArray,
+      } = calculateWordsPerMinute(get().paragraph!, typed, get().duration / 60);
+
+      set({
+        wpm: wordsPerMinute,
+        accuracy,
+        correctWordsArray: correctWordsArray,
+        incorrectWordsArray: incorrectWordsArray,
+      });
     },
 
     startGame: async () => {
@@ -71,6 +87,8 @@ const useGameStore = create<GameState>()(
         typed: '',
         accuracy: 0,
         wpm: 0,
+        correctWordsArray: [],
+        incorrectWordsArray: [],
       }),
     decrementTimer: () => set({ timer: get().timer - 1 }),
     setDuration: (duration) => set({ duration }),

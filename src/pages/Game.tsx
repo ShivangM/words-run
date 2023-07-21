@@ -6,6 +6,7 @@ import useGameStore from '../store/gameStore';
 import WaitingScreen from '../components/Game/WaitingScreen';
 import { toast } from 'react-toastify';
 import Status from '../components/Game/Status';
+import useUserStore from '../store/userStore';
 
 type Props = {};
 
@@ -24,6 +25,9 @@ const Game = (props: Props) => {
     setTyped,
     endGame,
     setGameStatus,
+    correctWordsArray,
+    incorrectWordsArray,
+    setPlayers,
   ] = useGameStore((state) => [
     state.decrementTimer,
     state.timer,
@@ -37,6 +41,9 @@ const Game = (props: Props) => {
     state.setTyped,
     state.endGame,
     state.setGameStatus,
+    state.correctWordsArray,
+    state.incorrectWordsArray,
+    state.setPlayers,
   ]);
 
   useEffect(() => {
@@ -66,8 +73,9 @@ const Game = (props: Props) => {
   useEffect(() => {
     setDuration(state.duration * 60);
     setMode(state.mode);
+    setPlayers(state.players);
     return () => {};
-  }, [state, setDuration, setMode]);
+  }, [state, setDuration, setMode, setPlayers]);
 
   const handleChange = (e: any) => {
     const { value } = e.target;
@@ -80,6 +88,8 @@ const Game = (props: Props) => {
     };
   }, []);
 
+  const [user] = useUserStore((state) => [state.user]);
+
   return (
     <div className="p-10 relative">
       <motion.div
@@ -91,7 +101,23 @@ const Game = (props: Props) => {
         {gameStatus === GameStatus.PLAYING ? (
           <div className="space-y-4">
             <Status />
-            <p className="text-base text-white">{paragraph}</p>
+            <p className="text-base w-full space-x-2 unselectable text-white">
+              {paragraph?.split(' ').map((word, idx) => {
+                return (
+                  <span
+                    key={idx}
+                    className={`${
+                      correctWordsArray.includes(word)
+                        ? 'text-green-500'
+                        : 'text-white'
+                    }`}
+                  >
+                    {word}
+                  </span>
+                );
+              })}
+            </p>
+
             <textarea
               placeholder="Type the text here..."
               onChange={handleChange}

@@ -1,6 +1,9 @@
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { ErrorMessage } from '@hookform/error-message';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { socket } from '../utils/socket';
+import { useEffect } from 'react';
+import useUserStore from '../store/userStore';
 
 type Inputs = {
   difficulty: string;
@@ -9,7 +12,7 @@ type Inputs = {
   roomCode: string;
 };
 
-const data = [
+const instructions = [
   {
     content: 'Choose the difficulty level from the options provided.',
   },
@@ -42,12 +45,29 @@ const CreateRoom = () => {
 
   const navigate = useNavigate();
 
-  const onSubmit: SubmitHandler<Inputs> = (data) => {
-    navigate('/game', { state: data });
-  };
-
   const { state } = useLocation();
   const mode = watch('mode') || state.mode;
+  const [user] = useUserStore((state) => [state.user]);
+
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    if (mode === 'online') {
+    } else if (mode === 'single') {
+      navigate('/game', { state: { ...data, players: [user] } });
+    } else {
+      socket.emit('createRoom', data);
+      // navigate('/game', { state: data });
+    }
+  };
+
+  useEffect(() => {
+    socket.on('roomCreated', (roomId) => {
+      navigate('/game', {
+        state: {
+          roomId,
+        },
+      });
+    });
+  }, []);
 
   return (
     <div className="">
@@ -140,7 +160,11 @@ const CreateRoom = () => {
                   type="submit"
                   className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
                 >
-                  Start Test
+                  {mode === 'single'
+                    ? 'Start Game'
+                    : mode === 'online'
+                    ? 'Join Room'
+                    : 'Create Room'}
                 </button>
               </form>
             </div>
@@ -152,7 +176,7 @@ const CreateRoom = () => {
             Typing Test Instructions
           </h1>
           <ul className="list-disc p-6 space-y-2 list-inside py-2">
-            {data.map((item) => {
+            {instructions.map((item) => {
               return <li className="">{item.content}</li>;
             })}
           </ul>

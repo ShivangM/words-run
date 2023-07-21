@@ -1,5 +1,4 @@
 import { AiOutlineTeam } from 'react-icons/ai';
-import { Link } from 'react-router-dom';
 import GameModeButton from './GameModeButton';
 
 type Props = {};
