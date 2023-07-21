@@ -1,3 +1,5 @@
+const { default: generateRoomCode } = require('./utils/generateRoomCode');
+
 module.exports = function Socket(io) {
   io.on('connection', (socket) => {
     const id = socket.id;

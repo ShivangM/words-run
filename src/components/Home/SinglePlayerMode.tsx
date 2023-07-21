@@ -5,7 +5,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 type Props = {};
 
 type Inputs = {
-  dificulty: string;
+  difficulty: string;
 };
 
 const SinglePlayerMode = (props: Props) => {
