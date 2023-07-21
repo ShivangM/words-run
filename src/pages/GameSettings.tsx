@@ -3,7 +3,7 @@ import { ErrorMessage } from '@hookform/error-message';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 type Inputs = {
-  dificulty: string;
+  difficulty: string;
   duration: string;
   mode: string;
   roomCode: string;
@@ -71,8 +71,8 @@ const CreateRoom = () => {
                     Difficulty Level:
                   </label>
                   <select
-                    {...register('dificulty', {
-                      required: 'Dificulty field is required',
+                    {...register('difficulty', {
+                      required: 'difficulty field is required',
                     })}
                     className="w-full text-black px-4 py-2 border rounded-md focus:outline-none focus:border-blue-500"
                   >
@@ -82,7 +82,7 @@ const CreateRoom = () => {
                   </select>
                   <ErrorMessage
                     errors={errors}
-                    name="dificulty"
+                    name="difficulty"
                     render={({ message }) => <p>{message}</p>}
                   />
                 </div>
