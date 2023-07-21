@@ -22,6 +22,7 @@ const Home = (props: Props) => {
         </div>
 
         <GlobalLeaderBoards />
+        
       </div>
     </div>
   );

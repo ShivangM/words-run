@@ -8,6 +8,7 @@ import { socket } from './utils/socket';
 import GameSettings from './pages/GameSettings';
 
 function App() {
+  
   const [isConnected, setIsConnected] = useState(socket.connected);
 
   useEffect(() => {
