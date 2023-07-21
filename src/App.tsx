@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import { useEffect, useState } from 'react';
 import { socket } from './utils/socket';
 import GameSettings from './pages/GameSettings';
+import Game from './pages/Game';
 
 function App() {
   
@@ -35,6 +36,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/game-settings" element={<GameSettings />} />
+          <Route path="/game" element={<Game />} />
         </Routes>
       </Layout>
     </Router>
