@@ -149,6 +149,8 @@ module.exports = function Socket(io) {
       snapshot.forEach(async (doc) => {
         const roomId = doc.id;
 
+        console.log(roomId);
+
         await db
           .collection('rooms')
           .doc(roomId)

@@ -1,6 +1,6 @@
 import { User } from 'firebase/auth';
 import { motion } from 'framer-motion';
-import { GameStatus } from '../../interfaces/game.d';
+import { GameModes, GameStatus } from '../../interfaces/game.d';
 import useGameStore from '../../store/gameStore';
 import dummyProfile from '../../assets/Dummy Profile.png';
 
@@ -48,12 +48,20 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
 
 const Players = () => {
   const [players] = useGameStore((state) => [state.players]);
+  const [mode] = useGameStore((state) => [state.mode]);
 
   return (
     <motion.div className="flex flex-row flex-wrap-reverse justify-center">
       {players?.map((players, idx) => (
         <PlayerCard delayIdx={idx} player={players} />
       ))}
+
+      {mode === GameModes.WITH_FRIENDS && (
+        <div className="py-4">
+          Players in lobby: {players?.length || 0} copy the link and shar it to
+          friends.
+        </div>
+      )}
     </motion.div>
   );
 };
