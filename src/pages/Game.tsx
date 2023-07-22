@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { GameStatus } from '../interfaces/game.d';
+import { GameModes, GameStatus } from '../interfaces/game.d';
 import useGameStore from '../store/gameStore';
 import WaitingScreen from '../components/Game/WaitingScreen';
 import { toast } from 'react-toastify';
@@ -106,6 +106,7 @@ const Game = (props: Props) => {
 
   useEffect(() => {
     if (params.get('roomId') && user) {
+      setMode(GameModes.WITH_FRIENDS);
       setRoomId(params.get('roomId')!);
       socket.emit('joinRoom', { roomId: params.get('roomId'), user: user });
     }
@@ -150,7 +151,7 @@ const Game = (props: Props) => {
           </div>
         ) : null}
 
-        <WaitingScreen />
+        {gameStatus !== GameStatus.PLAYING && <WaitingScreen />}
       </div>
     </div>
   );

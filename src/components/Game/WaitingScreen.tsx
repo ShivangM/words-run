@@ -3,6 +3,7 @@ import useGameStore from '../../store/gameStore';
 import { GameModes, GameStatus } from '../../interfaces/game.d';
 import { Link } from 'react-router-dom';
 import { MdOutlineContentCopy } from 'react-icons/md';
+import { toast } from 'react-toastify';
 
 type Props = {};
 
@@ -17,14 +18,16 @@ const WaitingScreen = (props: Props) => {
     ]
   );
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`http:localhost:3000/game?roomId=${roomId}`);
+    toast.success('Copied Room Id To Clipboard, Share with your friends');
+  };
+
   return (
     <div className="w-full flex items-center justify-center flex-col space-y-4">
       <Players />
       <div className="flex items-center space-x-4">
-        <div className="">
-          {mode === GameModes.WITH_FRIENDS ? (
-            <MdOutlineContentCopy className="text-7xl" />
-          ) : null}
+        <div className="flex items-center">
           <button
             onClick={startGame}
             disabled={loading !== null}
@@ -36,6 +39,15 @@ const WaitingScreen = (props: Props) => {
             </span>
           </button>
         </div>
+
+        {mode === GameModes.WITH_FRIENDS ? (
+          <div
+            onClick={handleCopy}
+            className="flex cursor-pointer items-center space-x-2"
+          >
+            <span>{roomId}</span> <MdOutlineContentCopy />
+          </div>
+        ) : null}
 
         {gameStatus === GameStatus.FINISHED ? (
           <Link

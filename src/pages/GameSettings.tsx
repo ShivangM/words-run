@@ -5,6 +5,8 @@ import { socket } from '../utils/socket';
 import { useEffect } from 'react';
 import useUserStore from '../store/userStore';
 import { GameModes } from '../interfaces/game.d';
+import { toast } from 'react-toastify';
+import useGameStore from '../store/gameStore';
 
 type Inputs = {
   difficulty: string;
@@ -40,7 +42,7 @@ const CreateRoom = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isLoading, isSubmitting },
     watch,
   } = useForm<Inputs>();
 
@@ -55,7 +57,11 @@ const CreateRoom = () => {
     } else if (mode === GameModes.SINGLE_PLAYER) {
       navigate('/game', { state: data });
     } else {
-      socket.emit('createRoom', user);
+      if (user) {
+        socket.emit('createRoom', user);
+      } else {
+        toast.error('Please login to create a room');
+      }
     }
   };
 
@@ -160,12 +166,15 @@ const CreateRoom = () => {
 
                 <button
                   type="submit"
-                  className="w-full text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
+                  disabled={isLoading || isSubmitting}
+                  className="w-full disabled:animate-pulse disabled:cursor-not-allowed text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
                 >
                   {mode === GameModes.SINGLE_PLAYER
                     ? 'Start Game'
                     : mode === GameModes.ONLINE
                     ? 'Join Room'
+                    : isLoading || isSubmitting
+                    ? 'Creating Room ...'
                     : 'Create Room'}
                 </button>
               </form>
