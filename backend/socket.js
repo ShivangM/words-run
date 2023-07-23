@@ -8,7 +8,6 @@ module.exports = function Socket(io) {
     console.log('SOMEONE JOINED ' + id);
 
     //Handle room creation
-    // Handle room creation
     socket.on('createRoom', async (user) => {
       const roomId = generateRoomCode();
       const existingRoom = await db.collection('rooms').doc(roomId).get();
@@ -38,7 +37,6 @@ module.exports = function Socket(io) {
 
         socket.emit('roomCreated', roomId);
         io.to(roomId).emit('activeUsers', users);
-        io.to(roomId).emit('setOwner', socket.id);
       } else {
         // Room with this ID already exists
         socket.emit('roomError', 'Room with this ID already exists');
@@ -96,8 +94,6 @@ module.exports = function Socket(io) {
             await db.collection('rooms').doc(roomId).get()
           ).data().owner;
 
-          console.log(owner);
-
           // Emit the list of active users in the room to all users in the same room
           io.to(roomId).emit('activeUsers', updatedUsers); // Change to io.to(roomId)
           io.to(roomId).emit('setOwner', owner);
@@ -105,15 +101,15 @@ module.exports = function Socket(io) {
       }
     });
 
-    socket.on('game-status', (data) => {
-      const { roomId, status } = data;
-      io.to(roomId).emit('game-status', { status });
+    socket.on('gameStatus', (data) => {
+      const { roomId, status, paragraph, timer } = data;
+      console.log(`Room ${roomId} game status changed to ${status}`);
+      io.to(roomId).emit('gameStatus', { status, paragraph, timer });
     });
 
     // Handle progress updates
-    socket.on('progressUpdate', (data) => {
-      const { roomId, progress } = data;
-      io.to(roomId).emit('progressUpdate', { userId: socket.id, progress });
+    socket.on('progressUpdate', ({ roomId, progress }) => {
+      io.to(roomId).emit('progressUpdate', { socketId: socket.id, progress });
     });
 
     // // join online request handle
@@ -157,14 +153,15 @@ module.exports = function Socket(io) {
 
       const roomsRef = db.collection('rooms');
       const snapshot = await roomsRef
-        .where(`users.${socketId}`, '!=', null)
+        .where(`users.${socketId}`, '==', socketId)
         .get();
+
+      console.log(snapshot.forEach((doc) => doc.data()));
 
       snapshot.forEach(async (doc) => {
         const roomId = doc.id;
 
-        console.log(roomId);
-
+        // Delete the user from the room
         await db
           .collection('rooms')
           .doc(roomId)
@@ -172,14 +169,22 @@ module.exports = function Socket(io) {
           .doc(socketId)
           .delete();
 
+        // Get the updated users in the room
         const roomUsersSnapshot = await db
           .collection('rooms')
           .doc(roomId)
           .collection('users')
           .get();
+
         const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
 
-        io.to(roomId).emit('activeUsers', updatedUsers);
+        if (updatedUsers.length === 0) {
+          // If there are no users left in the room, delete the entire room
+          await db.collection('rooms').doc(roomId).delete();
+        } else {
+          // If there are still users in the room, emit the updated list of users
+          io.to(roomId).emit('activeUsers', updatedUsers);
+        }
       });
     };
 
