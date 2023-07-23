@@ -81,7 +81,9 @@ const Players = () => {
   const [mode, roomId] = useGameStore((state) => [state.mode, state.roomId]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`http:localhost:3000/game?roomId=${roomId}`);
+    navigator.clipboard.writeText(
+      `${process.env.REACT_PUBLIC_CLIENT_URL}/game?roomId=${roomId}`
+    );
     toast.success('Copied Room Id To Clipboard, Share with your friends');
   };
 
