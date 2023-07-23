@@ -13,18 +13,13 @@ import Players from '../components/Home/Players';
 type Props = {};
 
 const Game = (props: Props) => {
-  const { state } = useLocation();
   const [params] = useSearchParams();
 
-  const [user, signInUser] = useUserStore((state) => [
-    state.user,
-    state.signInUser,
-  ]);
+  const [user] = useUserStore((state) => [state.user]);
 
   const [
     decrementTimer,
     timer,
-    setDuration,
     setMode,
     paragraph,
     gameStatus,
@@ -40,11 +35,12 @@ const Game = (props: Props) => {
     setRoomId,
     setOwner,
     mode,
-    updateProgress,
+    setProgress,
+    setParagraph,
+    setTimer,
   ] = useGameStore((state) => [
     state.decrementTimer,
     state.timer,
-    state.setDuration,
     state.setMode,
     state.paragraph,
     state.gameStatus,
@@ -60,9 +56,12 @@ const Game = (props: Props) => {
     state.setRoomId,
     state.setOwner,
     state.mode,
-    state.updateProgress,
+    state.setProgress,
+    state.setParagraph,
+    state.setTimer,
   ]);
 
+  //Handles Loading
   useEffect(() => {
     if (loading) {
       toast.loading(loading, {
@@ -76,83 +75,65 @@ const Game = (props: Props) => {
     };
   }, [loading]);
 
+  //Handles Timer
   useEffect(() => {
-    if (gameStatus === GameStatus.PLAYING && timer > 0) {
-      setTimeout(() => {
-        decrementTimer();
-      }, 1000);
-    } else if (gameStatus === GameStatus.PLAYING && timer === 0) {
-      endGame();
+    if (gameStatus === GameStatus.PLAYING) {
+      if (timer === 0) endGame();
+      else {
+        setTimeout(() => {
+          decrementTimer();
+        }, 1000);
+      }
     }
-    return () => {};
   }, [gameStatus, decrementTimer, timer, endGame]);
 
-  useEffect(() => {
-    if (state) {
-      setDuration(state.duration * 60);
-      setMode(state.mode);
-      setPlayers(state.players);
-    }
-    return () => {};
-  }, [state, setDuration, setMode, setPlayers]);
-
-  const handleChange = (e: any) => {
-    const { value } = e.target;
-    setTyped(value);
-  };
-
+  // Reset Game
   useEffect(() => {
     return () => {
       setGameStatus(GameStatus.WAITING);
     };
   }, [setGameStatus]);
 
+  //Socket Events
   useEffect(() => {
     socket.on('activeUsers', (users) => {
-      console.log(users);
       setPlayers(users);
     });
 
     socket.on('setOwner', (owner) => {
-      console.log(owner);
       setOwner(owner);
     });
 
-    socket.on('game-status', ({ status }) => {
+    socket.on('gameStatus', ({ status, paragraph, timer }) => {
+      setTimer(timer);
       setGameStatus(status);
+      if (paragraph) setParagraph(paragraph);
     });
 
-    socket.on('progressUpdate', ({ userId, progress }) => {
-      updateProgress(userId, progress);
+    socket.on('progressUpdate', ({ socketId, progress }) => {
+      setProgress(progress, socketId);
     });
 
     return () => {
       socket.off('activeUsers');
       socket.off('setOwner');
+      socket.off('gameStatus');
+      socket.off('progressUpdate');
     };
   }, []);
 
+  //Handles Room Id
   useEffect(() => {
-    setRoomId(params.get('roomId')!);
-    setMode(GameModes.WITH_FRIENDS);
-
     if (params.get('roomId')) {
-      if (!user) {
-        toast.error('You need to login to play online.');
-      } else {
-        socket.emit('joinRoom', {
-          roomId: params.get('roomId'),
-          user: user,
-        });
-      }
+      setRoomId(params.get('roomId')!);
+      setMode(GameModes.WITH_FRIENDS);
+
+      socket.emit('joinRoom', {
+        roomId: params.get('roomId'),
+        user: user,
+      });
     }
-  }, [user]);
-
-  // useEffect(() => {
-  //   if (mode !== GameModes.SINGLE_PLAYER) {
-
-  //   }
-  // }, [user]);
+  }, [user, params, setRoomId, setMode]);
 
   return (
     <div className="p-6 sm:p-10 relative">
@@ -161,10 +142,10 @@ const Game = (props: Props) => {
         className="absolute top-0 h-2 w-full bg-secondary left-0"
       />
 
-      <div className="w-full flex items-center justify-center p-10 bg-primary2 rounded-xl">
+      <div className="w-full flex items-center justify-center p-6 sm:p-10 bg-primary2 rounded-xl">
         {gameStatus === GameStatus.PLAYING ? (
           <div className="space-y-4">
-            {mode === GameModes.WITH_FRIENDS ? <Players /> : null}
+            {mode !== GameModes.SINGLE_PLAYER && <Players />}
             <Status />
             <p className="text-sm w-full font-bold text-white">{paragraph}</p>
             <p className="text-sm flex items-center flex-wrap unselectable w-full gap-2 text-white">
@@ -186,15 +167,19 @@ const Game = (props: Props) => {
 
             <textarea
               placeholder="Type the text here..."
-              onChange={handleChange}
+              onPaste={(e) => {
+                toast.error('Paste is not allowed');
+                e.preventDefault();
+              }}
+              onChange={(e) => setTyped(e.target.value)}
               rows={8}
               value={typed}
               className="w-full outline-none border-none text-black p-2 rounded-xl"
             ></textarea>
           </div>
-        ) : null}
-
-        {gameStatus !== GameStatus.PLAYING && <WaitingScreen />}
+        ) : (
+          <WaitingScreen />
+        )}
       </div>
     </div>
   );

@@ -1,85 +1,94 @@
-import { User } from 'firebase/auth';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { GameModes, GameStatus } from '../interfaces/game.d';
+import {
+  GameDifficulties,
+  GameDuration,
+  GameModes,
+  GameStatus,
+  Progress,
+} from '../interfaces/game.d';
+import { ExtendedUser } from '../interfaces/user';
 import fetchParagraphForGame from '../lib/fetchParagraphForGame';
 import calculateWordsPerMinute from '../utils/calculateAccuracyAndWPM';
 import { socket } from '../utils/socket';
 
-interface ExtendedUser extends User {
-  socketId: string;
-  progress: {
-    wpm: number | 0;
-    accuracy: number | 0;
-  };
-}
-
 interface GameState {
-  mode: GameModes;
   timer: number;
-  duration: number;
-  difficulty: string;
+  mode: GameModes;
+  duration: GameDuration;
+  difficulty: GameDifficulties;
+  gameStatus: GameStatus;
   loading: string | null;
   paragraph: string | null;
-  gameStatus: GameStatus;
   wpm: number;
   typed: string;
   accuracy: number;
   players: ExtendedUser[];
+  progress: Map<string, Progress>;
   correctWordsArray: string[];
   incorrectWordsArray: string[];
   roomId: string | null;
   owner: string | null;
+  setMode: (mode: GameModes) => void;
+  setDuration: (duration: GameDuration) => void;
+  setGameStatus: (gameStatus: GameStatus) => void;
+  setDificulty: (difficulty: GameDifficulties) => void;
   setPlayers: (players: ExtendedUser[]) => void;
   setTyped: (typed: string) => void;
-  setMode: (mode: GameModes) => void;
   startGame: () => void;
   endGame: () => void;
-  setDuration: (duration: number) => void;
   decrementTimer: () => void;
-  setGameStatus: (gameStatus: GameStatus) => void;
   setRoomId: (roomId: string) => void;
   setOwner: (owner: string) => void;
-  updateProgress: (userId: string, progress: any) => void;
+  setProgress: (progress: Progress, socketId: string) => void;
+  setParagraph: (paragraph: string) => void;
+  setTimer: (timer: number) => void;
 }
 
 const useGameStore = create<GameState>()(
   devtools((set, get) => ({
-    mode: GameModes.SINGLE_PLAYER,
-    duration: 0,
-    difficulty: 'easy',
-    timer: 0,
-    paragraph: null,
     loading: null,
-    wpm: 0,
-    gameStatus: GameStatus.WAITING,
-    typed: '',
-    accuracy: 0,
     players: [],
-    correctWordsArray: [],
-    incorrectWordsArray: [],
     roomId: null,
     owner: null,
+    mode: GameModes.SINGLE_PLAYER,
+    duration: GameDuration.ONE_MIN,
+    difficulty: GameDifficulties.EASY,
+    gameStatus: GameStatus.WAITING,
+    wpm: 0,
+    accuracy: 0,
+    timer: 0,
+    paragraph: null,
+    typed: '',
+    correctWordsArray: [],
+    incorrectWordsArray: [],
+    progress: new Map(),
 
-    setOwner: (owner) => set({ owner }),
+    setTimer: (timer) => set({ timer }),
+    setParagraph: (paragraph) => set({ paragraph }),
 
-    setRoomId: (roomId) => set({ roomId }),
-
-    setPlayers: (players) => set({ players }),
-
-    setGameStatus: (gameStatus) => set({ gameStatus }),
-
-    updateProgress: (userId, progress) => {
-      const players = get()?.players?.map((player) => {
-        if (player?.socketId === userId) {
-          return {
-            ...player,
-            progress,
-          };
-        }
-        return player;
-      });
+    setProgress: (progress, socketId) => {
+      const progressMap = get().progress;
+      console.log(progressMap.keys(), progressMap.values());
+      progressMap.set(socketId, progress);
+      set({ progress: progressMap });
     },
+
+    //Game Settings
+    setDuration: (duration) => set({ duration }),
+    setMode: (mode) => set({ mode }),
+    setDificulty: (difficulty) => set({ difficulty }),
+
+    //Game State
+    setGameStatus: (gameStatus) => {
+      console.log(gameStatus);
+      set({ gameStatus });
+    },
+
+    //Play With Firends Mode
+    setOwner: (owner) => set({ owner }),
+    setRoomId: (roomId) => set({ roomId }),
+    setPlayers: (players) => set({ players }),
 
     setTyped: (typed) => {
       set({ typed });
@@ -90,7 +99,7 @@ const useGameStore = create<GameState>()(
         incorrectWordsArray,
       } = calculateWordsPerMinute(get().paragraph!, typed, get().duration / 60);
 
-      if (get().mode === GameModes.WITH_FRIENDS) {
+      if (get().mode !== GameModes.SINGLE_PLAYER) {
         socket.emit('progressUpdate', {
           roomId: get().roomId,
           progress: {
@@ -109,17 +118,26 @@ const useGameStore = create<GameState>()(
     },
 
     startGame: async () => {
-      set({ loading: 'Generating a paragraph for you! Please Wait....' });
-
-      socket.emit('game-status', {
-        status: GameStatus.PLAYING,
-        roomId: get().roomId,
+      set({
+        loading: 'Generating a paragraph for you! Please Wait....',
+        timer: 0,
+        accuracy: 0,
+        wpm: 0,
       });
 
       const response = await fetchParagraphForGame(
         get().difficulty,
         get().duration
       );
+
+      if (get().mode !== GameModes.SINGLE_PLAYER) {
+        socket.emit('gameStatus', {
+          status: GameStatus.PLAYING,
+          paragraph: response?.content,
+          roomId: get().roomId,
+          timer: get().duration,
+        });
+      }
 
       set({
         timer: get().duration,
@@ -128,19 +146,23 @@ const useGameStore = create<GameState>()(
         paragraph: response?.content,
       });
     },
-    endGame: () =>
+
+    endGame: () => {
+      if (get().mode !== GameModes.SINGLE_PLAYER) {
+        socket.emit('gameStatus', {
+          status: GameStatus.FINISHED,
+        });
+      }
+
       set({
-        timer: 0,
         gameStatus: GameStatus.FINISHED,
         typed: '',
-        accuracy: 0,
-        wpm: 0,
         correctWordsArray: [],
         incorrectWordsArray: [],
-      }),
+      });
+    },
+
     decrementTimer: () => set({ timer: get().timer - 1 }),
-    setDuration: (duration) => set({ duration }),
-    setMode: (mode) => set({ mode }),
   }))
 );
 

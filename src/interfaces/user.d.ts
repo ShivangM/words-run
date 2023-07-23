@@ -1,7 +1,18 @@
-export interface User {
-  name: string;
-  email?: string;
-  image: string;
-  averageWpm: number;
-  races: number;
+import { User } from 'firebase/auth';
+
+interface ExtendedUser extends User {
+  socketId: string;
+  stats?: {
+    averageWpm: number;
+    races: number;
+  };
+}
+
+interface InitialUser {
+  displayName: string;
+  photoURL: string;
+  stats: {
+    averageWpm: number;
+    races: number;
+  };
 }

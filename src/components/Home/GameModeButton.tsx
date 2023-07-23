@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
-import { GameModes } from '../../interfaces/game';
+import { useNavigate } from 'react-router-dom';
+import { GameModes } from '../../interfaces/game.d';
+import useGameStore from '../../store/gameStore';
 
 type Props = {
   text: string;
@@ -7,12 +8,16 @@ type Props = {
 };
 
 const GameModeButton = ({ text, mode }: Props) => {
+  const navigate = useNavigate();
+  const [setMode] = useGameStore((state) => [state.setMode]);
+  const handleClick = () => {
+    setMode(mode);
+    navigate('/game-settings');
+  };
+
   return (
-    <Link
-      to="/game-settings"
-      state={{
-        mode: mode,
-      }}
+    <button
+      onClick={handleClick}
       className="relative inline-flex items-center justify-center p-4 px-6 py-3 overflow-hidden font-medium text-indigo-600 transition duration-300 ease-out border-2 border-secondary rounded-full shadow-md group"
     >
       <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-secondary group-hover:translate-x-0 ease">
@@ -35,7 +40,7 @@ const GameModeButton = ({ text, mode }: Props) => {
         {text}
       </span>
       <span className="relative invisible">{text}</span>
-    </Link>
+    </button>
   );
 };
 

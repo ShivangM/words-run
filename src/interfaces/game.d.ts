@@ -12,7 +12,19 @@ export enum GameModes {
   WITH_FRIENDS,
 }
 
-export interface Player extends User {
+export enum GameDifficulties {
+  EASY,
+  MEDIUM,
+  HARD,
+}
+
+export enum GameDuration {
+  ONE_MIN = 60,
+  THREE_MIN = 180,
+  FIVE_MIN = 300,
+}
+
+export interface Progress {
   wpm: number;
   accuracy: number;
 }

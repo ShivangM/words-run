@@ -3,21 +3,22 @@ import './App.css';
 import Layout from './components/Layout/Layout';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { socket } from './utils/socket';
 import GameSettings from './pages/GameSettings';
 import Game from './pages/Game';
+import useUserStore from './store/userStore';
 
 function App() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [setSocketId] = useUserStore((state) => [state.setSocketId]);
 
   useEffect(() => {
     function onConnect() {
-      setIsConnected(true);
+      setSocketId(socket.id);
     }
 
     function onDisconnect() {
-      setIsConnected(false);
+      setSocketId(null);
     }
 
     socket.on('connect', onConnect);

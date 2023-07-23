@@ -2,19 +2,16 @@ import Players from '../Home/Players';
 import useGameStore from '../../store/gameStore';
 import { GameModes, GameStatus } from '../../interfaces/game.d';
 import { Link } from 'react-router-dom';
-import { MdOutlineContentCopy } from 'react-icons/md';
-import { toast } from 'react-toastify';
 import { socket } from '../../utils/socket';
 
 type Props = {};
 
 const WaitingScreen = (props: Props) => {
-  const [startGame, loading, gameStatus, roomId, mode, owner] = useGameStore(
+  const [startGame, loading, gameStatus, mode, owner] = useGameStore(
     (state) => [
       state.startGame,
       state.loading,
       state.gameStatus,
-      state.roomId,
       state.mode,
       state.owner,
     ]
