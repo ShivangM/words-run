@@ -77,11 +77,13 @@ const useGameSettings = () => {
       setPlayers([user as ExtendedUser]);
       navigate('/game');
     } else if (mode === GameModes.WITH_FRIENDS) {
+      if (!socketId)
+        return toast.error('Something went wrong! Please refresh the page.');
+
       toast.loading('Creating Room', {
         toastId: 'creatingRoom',
       });
 
-      if (!socketId) return toast.error('Something went wrong!');
       socket.emit('createRoom', { user, socketId });
     } else {
       navigate('/game');

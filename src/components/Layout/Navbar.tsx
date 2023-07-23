@@ -1,16 +1,22 @@
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/Logo.svg';
 import useUserStore from '../../store/userStore';
 import UserProfile from './UserProfile';
+import { useEffect } from 'react';
+import { ExtendedUser } from '../../interfaces/user';
 
 type Props = {};
 
 const Navbar = (props: Props) => {
-  const [signInUser, signOutUser, token] = useUserStore((state) => [
+  const [signInUser, signOutUser, token, setUser] = useUserStore((state) => [
     state.signInUser,
     state.signOutUser,
     state.token,
+    state.setUser,
   ]);
+
+  const auth = getAuth();
 
   const handleAuth = () => {
     if (token) {
@@ -19,6 +25,14 @@ const Navbar = (props: Props) => {
       signInUser();
     }
   };
+
+  console.log(auth.currentUser);
+
+  useEffect(() => {
+    if (auth?.currentUser) {
+      setUser(auth.currentUser as ExtendedUser);
+    }
+  }, [auth]);
 
   return (
     <nav className="py-1 px-4 w-full bg-primary">

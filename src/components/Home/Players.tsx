@@ -6,7 +6,6 @@ import { GiQueenCrown } from 'react-icons/gi';
 import { MdOutlineContentCopy } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { ExtendedUser } from '../../interfaces/user';
-import useUserStore from '../../store/userStore';
 
 type Props = {
   player: ExtendedUser;
@@ -44,7 +43,7 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
           delay: delayIdx * 0.2,
         },
       }}
-      className="flex w-28 flex-col items-center justify-center m-8 text-center"
+      className="flex max-w-xs flex-col items-center justify-center m-8 text-center"
     >
       <div className="relative w-fit">
         {socketId === owner ? (
@@ -82,7 +81,7 @@ const Players = () => {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
-      `${process.env.REACT_PUBLIC_CLIENT_URL}/game?roomId=${roomId}`
+      `${process.env.REACT_APP_CLIENT_URL}/game?roomId=${roomId}`
     );
     toast.success('Copied Room Id To Clipboard, Share with your friends');
   };

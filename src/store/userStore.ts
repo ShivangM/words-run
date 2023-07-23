@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 // import { User } from '../interfaces/user';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth, provider } from '../utils/firebase';
@@ -13,6 +13,7 @@ interface UserState {
   setSocketId: (socketId: string | null) => void;
   signInUser: () => void;
   signOutUser: () => void;
+  setUser: (user: ExtendedUser) => void;
 }
 
 const initialUser: InitialUser = {
@@ -25,38 +26,51 @@ const initialUser: InitialUser = {
 };
 
 const useUserStore = create<UserState>()(
-  devtools((set, get) => ({
-    user: initialUser,
-    token: null,
-    socketId: null,
+  devtools(
+    // persist(
+    (set, get) => ({
+      user: initialUser,
+      token: null,
+      socketId: null,
 
-    setSocketId: (socketId) => {
-      set({ socketId });
-    },
+      setUser: (user) => {
+        set({ user });
+      },
 
-    signInUser: async () => {
-      await signInWithPopup(auth, provider)
-        .then((result) => {
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          const token = credential!.accessToken;
-          const user = result.user as ExtendedUser;
+      setSocketId: (socketId) => {
+        set({ socketId });
+      },
 
-          set({ user, token });
-        })
-        .catch((error) => {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          const email = error.customData.email;
-          const credential = GoogleAuthProvider.credentialFromError(error);
-          console.error(errorCode, errorMessage, email, credential);
-        });
-    },
+      signInUser: async () => {
+        await signInWithPopup(auth, provider)
+          .then((result) => {
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential!.accessToken;
+            const user = result.user as ExtendedUser;
 
-    signOutUser: async () => {
-      await signOut(auth);
-      set({ user: initialUser, token: null });
-    },
-  }))
+            set({ user, token });
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            const email = error.customData.email;
+            const credential = GoogleAuthProvider.credentialFromError(error);
+            console.error(errorCode, errorMessage, email, credential);
+          });
+      },
+
+      signOutUser: async () => {
+        await signOut(auth);
+        set({ user: initialUser, token: null });
+      },
+    })
+    // {
+    //   name: 'user-storage',
+    //   getStorage: () => localStorage,
+    //   partialize: (state) => ({ user: state.user, token: state.token }),
+    // }
+    // )
+  )
 );
 
 export default useUserStore;

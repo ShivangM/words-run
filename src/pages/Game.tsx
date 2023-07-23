@@ -38,6 +38,7 @@ const Game = (props: Props) => {
     setProgress,
     setParagraph,
     setTimer,
+    roomId,
   ] = useGameStore((state) => [
     state.decrementTimer,
     state.timer,
@@ -59,6 +60,7 @@ const Game = (props: Props) => {
     state.setProgress,
     state.setParagraph,
     state.setTimer,
+    state.roomId,
   ]);
 
   //Handles Loading
@@ -115,6 +117,8 @@ const Game = (props: Props) => {
     });
 
     return () => {
+      setPlayers([]);
+      socket.emit('exitRoom', roomId);
       socket.off('activeUsers');
       socket.off('setOwner');
       socket.off('gameStatus');

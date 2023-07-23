@@ -22,7 +22,7 @@ const WaitingScreen = (props: Props) => {
       <Players />
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
-          {(mode === GameModes.WITH_FRIENDS && owner === socket.id) ||
+          {(mode !== GameModes.SINGLE_PLAYER && owner === socket.id) ||
           mode === GameModes.SINGLE_PLAYER ? (
             <button
               onClick={startGame}
@@ -38,7 +38,8 @@ const WaitingScreen = (props: Props) => {
             </button>
           ) : (
             <div className="animate-pulse">
-              Waiting for owner to start the game...
+              Waiting for owner to {GameStatus.FINISHED ? 'restart' : 'start'}{' '}
+              the game...
             </div>
           )}
         </div>

@@ -18,25 +18,7 @@ module.exports = function Socket(io) {
         console.log(`Room ${roomId} created by ${socket.id}`);
         socket.join(roomId);
 
-        // Store user data with socket.id as the document key
-
-        await db
-          .collection('rooms')
-          .doc(roomId)
-          .collection('users')
-          .doc(socket.id)
-          .set({ socketId: socket.id, ...user });
-
-        const usersSnapshot = await db
-          .collection('rooms')
-          .doc(roomId)
-          .collection('users')
-          .get();
-
-        const users = usersSnapshot.docs.map((doc) => doc.data());
-
         socket.emit('roomCreated', roomId);
-        io.to(roomId).emit('activeUsers', users);
       } else {
         // Room with this ID already exists
         socket.emit('roomError', 'Room with this ID already exists');
@@ -101,6 +83,32 @@ module.exports = function Socket(io) {
       }
     });
 
+    socket.on('exitRoom', async (roomId) => {
+      await db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('users')
+        .doc(socket.id)
+        .delete();
+
+      console.log(`${socket.id} left room ${roomId}`);
+
+      const roomUsersSnapshot = await db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('users')
+        .get();
+      const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
+
+      if (updatedUsers.length === 0) {
+        // If there are no users left in the room, delete the entire room
+        await db.collection('rooms').doc(roomId).delete();
+      } else {
+        // If there are still users in the room, emit the updated list of users
+        io.to(roomId).emit('activeUsers', updatedUsers);
+      }
+    });
+
     socket.on('gameStatus', (data) => {
       const { roomId, status, paragraph, timer } = data;
       console.log(`Room ${roomId} game status changed to ${status}`);
@@ -150,42 +158,6 @@ module.exports = function Socket(io) {
 
     const handleDisconnect = async (socketId) => {
       console.log(`User with ID ${socketId} disconnected`);
-
-      const roomsRef = db.collection('rooms');
-      const snapshot = await roomsRef
-        .where(`users.${socketId}`, '==', socketId)
-        .get();
-
-      console.log(snapshot.forEach((doc) => doc.data()));
-
-      snapshot.forEach(async (doc) => {
-        const roomId = doc.id;
-
-        // Delete the user from the room
-        await db
-          .collection('rooms')
-          .doc(roomId)
-          .collection('users')
-          .doc(socketId)
-          .delete();
-
-        // Get the updated users in the room
-        const roomUsersSnapshot = await db
-          .collection('rooms')
-          .doc(roomId)
-          .collection('users')
-          .get();
-
-        const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
-
-        if (updatedUsers.length === 0) {
-          // If there are no users left in the room, delete the entire room
-          await db.collection('rooms').doc(roomId).delete();
-        } else {
-          // If there are still users in the room, emit the updated list of users
-          io.to(roomId).emit('activeUsers', updatedUsers);
-        }
-      });
     };
 
     socket.on('disconnect', () => {
