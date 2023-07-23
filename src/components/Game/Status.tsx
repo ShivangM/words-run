@@ -31,7 +31,7 @@ const Status = () => {
   ]);
 
   return (
-    <div className="flex items-center space-x-4 flew-wrap">
+    <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
       <StatusCard name="Words / Min" value={wpm} Icon={BsSpeedometer2} />
       <StatusCard name="Accuracy" value={accuracy} Icon={BsCheck2Circle} />
       <StatusCard name="Time Remaining" value={timer} Icon={BiTimeFive} />

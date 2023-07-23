@@ -14,18 +14,19 @@ module.exports = function Socket(io) {
       const existingRoom = await db.collection('rooms').doc(roomId).get();
 
       if (!existingRoom.exists) {
-        await db.collection('rooms').doc(roomId).set({});
+        await db.collection('rooms').doc(roomId).set({ owner: socket.id });
 
         console.log(`Room ${roomId} created by ${socket.id}`);
         socket.join(roomId);
 
         // Store user data with socket.id as the document key
+
         await db
           .collection('rooms')
           .doc(roomId)
           .collection('users')
           .doc(socket.id)
-          .set(user);
+          .set({ socketId: socket.id, ...user });
 
         const usersSnapshot = await db
           .collection('rooms')
@@ -37,6 +38,7 @@ module.exports = function Socket(io) {
 
         socket.emit('roomCreated', roomId);
         io.to(roomId).emit('activeUsers', users);
+        io.to(roomId).emit('setOwner', socket.id);
       } else {
         // Room with this ID already exists
         socket.emit('roomError', 'Room with this ID already exists');
@@ -73,7 +75,7 @@ module.exports = function Socket(io) {
               .doc(roomId)
               .collection('users')
               .doc(socket.id)
-              .set(user);
+              .set({ socketId: socket.id, ...user });
 
             socket.join(roomId);
             console.log(`${socket.id} joined room ${roomId}`);
@@ -90,10 +92,22 @@ module.exports = function Socket(io) {
             doc?.data()
           );
 
+          const owner = await (
+            await db.collection('rooms').doc(roomId).get()
+          ).data().owner;
+
+          console.log(owner);
+
           // Emit the list of active users in the room to all users in the same room
           io.to(roomId).emit('activeUsers', updatedUsers); // Change to io.to(roomId)
+          io.to(roomId).emit('setOwner', owner);
         }
       }
+    });
+
+    socket.on('game-status', (data) => {
+      const { roomId, status } = data;
+      io.to(roomId).emit('game-status', { status });
     });
 
     // Handle progress updates

@@ -73,6 +73,8 @@ const CreateRoom = () => {
     });
   }, [navigate, watch]);
 
+  console.log(isSubmitting);
+
   return (
     <div className="">
       <div className="grid grid-cols-1 max-w-7xl mx-auto lg:grid-cols-2 gap-4 p-6 sm:p-10 h-full lg:h-screen">

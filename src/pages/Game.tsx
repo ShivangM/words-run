@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import Status from '../components/Game/Status';
 import useUserStore from '../store/userStore';
 import { socket } from '../utils/socket';
+import Players from '../components/Home/Players';
 
 type Props = {};
 
@@ -15,7 +16,10 @@ const Game = (props: Props) => {
   const { state } = useLocation();
   const [params] = useSearchParams();
 
-  const [user] = useUserStore((state) => [state.user]);
+  const [user, signInUser] = useUserStore((state) => [
+    state.user,
+    state.signInUser,
+  ]);
 
   const [
     decrementTimer,
@@ -34,6 +38,9 @@ const Game = (props: Props) => {
     incorrectWordsArray,
     setPlayers,
     setRoomId,
+    setOwner,
+    mode,
+    updateProgress,
   ] = useGameStore((state) => [
     state.decrementTimer,
     state.timer,
@@ -51,6 +58,9 @@ const Game = (props: Props) => {
     state.incorrectWordsArray,
     state.setPlayers,
     state.setRoomId,
+    state.setOwner,
+    state.mode,
+    state.updateProgress,
   ]);
 
   useEffect(() => {
@@ -102,18 +112,50 @@ const Game = (props: Props) => {
       console.log(users);
       setPlayers(users);
     });
+
+    socket.on('setOwner', (owner) => {
+      console.log(owner);
+      setOwner(owner);
+    });
+
+    socket.on('game-status', ({ status }) => {
+      setGameStatus(status);
+    });
+
+    socket.on('progressUpdate', ({ userId, progress }) => {
+      updateProgress(userId, progress);
+    });
+
+    return () => {
+      socket.off('activeUsers');
+      socket.off('setOwner');
+    };
   }, []);
 
   useEffect(() => {
-    if (params.get('roomId') && user) {
-      setMode(GameModes.WITH_FRIENDS);
-      setRoomId(params.get('roomId')!);
-      socket.emit('joinRoom', { roomId: params.get('roomId'), user: user });
+    setRoomId(params.get('roomId')!);
+    setMode(GameModes.WITH_FRIENDS);
+
+    if (params.get('roomId')) {
+      if (!user) {
+        toast.error('You need to login to play online.');
+      } else {
+        socket.emit('joinRoom', {
+          roomId: params.get('roomId'),
+          user: user,
+        });
+      }
     }
-  }, []);
+  }, [user]);
+
+  // useEffect(() => {
+  //   if (mode !== GameModes.SINGLE_PLAYER) {
+
+  //   }
+  // }, [user]);
 
   return (
-    <div className="p-10 relative">
+    <div className="p-6 sm:p-10 relative">
       <motion.div
         style={{ scaleX: timer / duration }}
         className="absolute top-0 h-2 w-full bg-secondary left-0"
@@ -122,9 +164,10 @@ const Game = (props: Props) => {
       <div className="w-full flex items-center justify-center p-10 bg-primary2 rounded-xl">
         {gameStatus === GameStatus.PLAYING ? (
           <div className="space-y-4">
+            {mode === GameModes.WITH_FRIENDS ? <Players /> : null}
             <Status />
-            <p className="text-sm font-bold text-white">{paragraph}</p>
-            <p className="text-base flex items-center flex-wrap unselectable w-full space-x-2 text-white">
+            <p className="text-sm w-full font-bold text-white">{paragraph}</p>
+            <p className="text-sm flex items-center flex-wrap unselectable w-full gap-2 text-white">
               {typed?.split(' ').map((word, idx) => {
                 return (
                   <span
