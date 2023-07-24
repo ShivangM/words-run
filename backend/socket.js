@@ -169,6 +169,7 @@ module.exports = function Socket(io) {
     const handleDisconnect = async (socketId) => {
       console.log(`User with ID ${socketId} disconnected`);
       const roomId = await findRoomIdBySocketId(socketId, db);
+      console.log(roomId);
 
       try {
         await db

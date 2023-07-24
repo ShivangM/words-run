@@ -3,6 +3,7 @@ import {
   arrayUnion,
   collection,
   doc,
+  setDoc,
   updateDoc,
 } from 'firebase/firestore';
 import { create } from 'zustand';
@@ -175,12 +176,9 @@ const useGameStore = create<GameState>()(
 
       if (user?.uid) {
         try {
-          const userCollection = collection(db, 'user');
-          const userDoc = doc(userCollection, user?.uid);
-
-          console.log(userCollection, userDoc);
-
-          await addDoc(collection(userDoc, 'games'), game);
+          await setDoc(doc(db, 'users', user?.uid), {
+            games: arrayUnion(game),
+          });
         } catch (error) {
           console.error(error);
         }

@@ -126,7 +126,7 @@ const Players = () => {
                   : -1;
               })
               ?.map((players, idx) => (
-                <PlayerCard delayIdx={idx} player={players} />
+                <PlayerCard key={idx} delayIdx={idx} player={players} />
               ))}
       </div>
     </div>

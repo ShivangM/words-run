@@ -10,6 +10,7 @@ interface ExtendedUser extends User {
 
 interface InitialUser {
   displayName: string;
+  uid?: string;
   photoURL: string;
   stats: {
     averageWpm: number;

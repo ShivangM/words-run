@@ -1,60 +1,89 @@
-type Props = {};
+import { getAuth } from 'firebase/auth';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { GameModes } from '../../interfaces/game.d';
+import useUserStore from '../../store/userStore';
+import { db } from '../../utils/firebase';
 
-const UserIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-8 w-5 "
-    viewBox="0 0 20 20"
-    fill="currentColor"
-    
-  >
-    <path
-      fillRule="evenodd"
-      d="M10 0a5 5 0 100 10 5 5 0 000-10zm0 13a7 7 0 100-14 7 7 0 000 14zM6.293 9.293a1 1 0 111.414-1.414 3 3 0 104.472 0 1 1 0 111.414 1.414 5 5 0 11-7.3 0z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
+type Game = {
+  accuracy: number;
+  difficulty: number;
+  duration: number;
+  mode: number;
+  wpm: number;
+};
+type Props = {
+  game: Game;
+};
 
-const LeaderBoardRow = () => {
+const getMode = (mode: number) => {
+  return mode === GameModes.SINGLE_PLAYER
+    ? 'Single Player'
+    : mode === GameModes.ONLINE
+    ? 'Online Multiplayer'
+    : 'With Friends';
+};
+
+const LeaderBoardRow = ({ game }: Props) => {
+  const { accuracy, difficulty, duration, mode, wpm } = game;
   return (
     <tr className="even:bg-gray-300 odd:bg-white">
-      <td className=" text-black">1</td>
-      <td className=" text-black flex items-center">
-        <UserIcon /> {/* Add the user icon here */}
-        Leg2.O
-      </td>
-      <td className=" text-black">196</td>
+      <td className=" text-black">{new Date().toLocaleDateString()}</td>
+      <td className=" text-black flex items-center">{getMode(mode)}</td>
+      <td className=" text-black">{wpm} Words / Min</td>
+      <td className=" text-black">{accuracy}</td>
     </tr>
   );
 };
 
-const GlobalLeaderBoards = (props: Props) => {
+const GlobalLeaderBoards = () => {
+  const user = useUserStore((state) => state.user);
+  const [games, setGames] = useState<Game[]>();
+
+  useEffect(() => {
+    if (user?.uid) {
+      toast.loading('Fetching your previous games', {
+        toastId: 'fetching-previous-games',
+      });
+      const fetchPreviousGames = async () => {
+        const usersCollection = collection(db, 'users');
+        const userData = await getDoc(doc(usersCollection, user?.uid));
+        const prevGames = await userData?.data()?.games;
+        setGames(prevGames);
+        toast.dismiss('fetching-previous-games');
+      };
+
+      fetchPreviousGames();
+    } else {
+      setGames(undefined);
+    }
+  }, [user]);
+
   return (
     <div className="w-full col-span-1 rounded-xl flex flex-col py-8 items-center bg-white h-full">
-      <h3 className="font-bold text-primary text-3xl">Global Leaderboards</h3>
-      <table className="w-full text-center table-auto">
-        <thead>
-          <tr>
-            <th className="py-2 text-black">Rank</th>
-            <th className="py-2 text-black">User</th>
-            <th className="py-2 text-black">Avg. Speed</th>
-          </tr>
-        </thead>
-        <tbody>
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-          <LeaderBoardRow />
-        </tbody>
-      </table>
+      <h3 className="font-bold text-primary text-3xl">Previous Games</h3>
+      {games ? (
+        <table className="w-full text-center table-auto">
+          <thead>
+            <tr>
+              <th className="py-2 text-black">Date</th>
+              <th className="py-2 text-black">Mode</th>
+              <th className="py-2 text-black">Wpm</th>
+              <th className="py-2 text-black">Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {games?.map((game, idx) => {
+              return <LeaderBoardRow game={game} key={idx} />;
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-black">
+          No previous Found, Login to save your games.
+        </p>
+      )}
     </div>
   );
 };

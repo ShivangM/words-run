@@ -1,18 +1,14 @@
 const findRoomIdBySocketId = async (socketId, db) => {
   try {
-    // Query the Firestore database for rooms containing the given socketId
+    // Query the Firestore database for rooms containing the given socketId in their 'users' collection
     const querySnapshot = await db
       .collectionGroup('users')
       .where('socketId', '==', socketId)
       .get();
 
-    console.log(querySnapshot);
-
-    // Loop through the query results to find the roomId
     let roomId = null;
-    querySnapshot.forEach((doc) => {
-      const roomRef = doc.ref.parent.parent; // Reference to the room document
-      roomId = roomRef.id; // Get the roomId from the document reference
+    await querySnapshot.forEach((doc) => {
+      roomId = doc.id;
     });
 
     return roomId;
