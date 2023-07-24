@@ -176,7 +176,7 @@ const useGameStore = create<GameState>()(
 
       if (user?.uid) {
         try {
-          await setDoc(doc(db, 'users', user?.uid), {
+          await updateDoc(doc(db, 'users', user?.uid), {
             games: arrayUnion(game),
           });
         } catch (error) {
