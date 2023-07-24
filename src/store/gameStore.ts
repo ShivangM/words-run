@@ -1,3 +1,10 @@
+import {
+  addDoc,
+  arrayUnion,
+  collection,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import {
@@ -10,6 +17,7 @@ import {
 import { ExtendedUser } from '../interfaces/user';
 import fetchParagraphForGame from '../lib/fetchParagraphForGame';
 import calculateWordsPerMinute from '../utils/calculateAccuracyAndWPM';
+import { db } from '../utils/firebase';
 import { socket } from '../utils/socket';
 
 interface GameState {
@@ -36,13 +44,15 @@ interface GameState {
   setPlayers: (players: ExtendedUser[]) => void;
   setTyped: (typed: string) => void;
   startGame: () => void;
-  endGame: () => void;
+  endGame: (user: ExtendedUser) => void;
   decrementTimer: () => void;
   setRoomId: (roomId: string) => void;
   setOwner: (owner: string) => void;
   setProgress: (progress: Progress, socketId: string) => void;
   setParagraph: (paragraph: string) => void;
   setTimer: (timer: number) => void;
+  setWpm: (wpm: number) => void;
+  setAccuracy: (accuracy: number) => void;
 }
 
 const useGameStore = create<GameState>()(
@@ -64,12 +74,14 @@ const useGameStore = create<GameState>()(
     incorrectWordsArray: [],
     progress: new Map(),
 
+    setWpm: (wpm) => set({ wpm }),
+    setAccuracy: (accuracy) => set({ accuracy }),
+
     setTimer: (timer) => set({ timer }),
     setParagraph: (paragraph) => set({ paragraph }),
 
     setProgress: (progress, socketId) => {
       const progressMap = get().progress;
-      console.log(progressMap.keys(), progressMap.values());
       progressMap.set(socketId, progress);
       set({ progress: progressMap });
     },
@@ -81,7 +93,6 @@ const useGameStore = create<GameState>()(
 
     //Game State
     setGameStatus: (gameStatus) => {
-      console.log(gameStatus);
       set({ gameStatus });
     },
 
@@ -147,11 +158,32 @@ const useGameStore = create<GameState>()(
       });
     },
 
-    endGame: () => {
+    endGame: async (user) => {
       if (get().mode !== GameModes.SINGLE_PLAYER) {
         socket.emit('gameStatus', {
           status: GameStatus.FINISHED,
         });
+      }
+
+      const game = {
+        wpm: get().wpm,
+        accuracy: get().accuracy,
+        duration: get().duration,
+        difficulty: get().difficulty,
+        mode: get().mode,
+      };
+
+      if (user?.uid) {
+        try {
+          const userCollection = collection(db, 'user');
+          const userDoc = doc(userCollection, user?.uid);
+
+          console.log(userCollection, userDoc);
+
+          await addDoc(collection(userDoc, 'games'), game);
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       set({

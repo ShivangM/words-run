@@ -4,7 +4,7 @@ import dummyImage from '../../assets/Dummy Profile.png';
 type Props = {};
 
 const UserProfile = (props: Props) => {
-  const [user] = useUserStore((state) => [state.user]);
+  const [user, setName] = useUserStore((state) => [state.user, state.setName]);
   if (!user) return null;
 
   const { displayName, photoURL, stats } = user!;
@@ -19,8 +19,13 @@ const UserProfile = (props: Props) => {
           className="w-12 h-12 rounded-lg"
         />
         <div className="flex flex-col">
-          <p className="text-white text-xl font-semibold">{displayName}</p>
-          <div className="flex text-sm items-center space-x-2">
+          <input
+            value={displayName ? displayName : ''}
+            onChange={(e) => setName(e.target.value)}
+            type="text"
+            className="text-white text-lg bg-transparent border border-white rounded-lg px-2 py-0.5 font-semibold"
+          />
+          <div className="flex text-xs items-center space-x-2">
             <span>AVG WPM: {averageWpm}</span>
             <span>GAMES: {races}</span>
           </div>

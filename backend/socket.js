@@ -1,3 +1,4 @@
+const findRoomIdBySocketId = require('./lib/getRoomIdBySocketId');
 const { db } = require('./utils/firebase');
 const { generateRoomCode } = require('./utils/generateRoomCode');
 
@@ -33,7 +34,6 @@ module.exports = function Socket(io) {
         // Room with this ID does not exist
         socket.emit('roomError', 'Room with this ID does not exist');
       } else {
-        const roomData = existingRoom.data();
         const roomUsersSnapshot = await db
           .collection('rooms')
           .doc(roomId)
@@ -84,28 +84,38 @@ module.exports = function Socket(io) {
     });
 
     socket.on('exitRoom', async (roomId) => {
-      await db
-        .collection('rooms')
-        .doc(roomId)
-        .collection('users')
-        .doc(socket.id)
-        .delete();
+      try {
+        await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .doc(socket.id)
+          .delete();
+      } catch (error) {
+        console.error(error);
+      }
 
       console.log(`${socket.id} left room ${roomId}`);
 
-      const roomUsersSnapshot = await db
-        .collection('rooms')
-        .doc(roomId)
-        .collection('users')
-        .get();
-      const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
+      // Get the updated list of active users in the room
+      try {
+        const roomUsersSnapshot = await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .get();
 
-      if (updatedUsers.length === 0) {
-        // If there are no users left in the room, delete the entire room
-        await db.collection('rooms').doc(roomId).delete();
-      } else {
-        // If there are still users in the room, emit the updated list of users
-        io.to(roomId).emit('activeUsers', updatedUsers);
+        const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
+
+        if (updatedUsers.length === 0) {
+          // If there are no users left in the room, delete the entire room
+          await db.collection('rooms').doc(roomId).delete();
+        } else {
+          // If there are still users in the room, emit the updated list of users
+          io.to(roomId).emit('activeUsers', updatedUsers);
+        }
+      } catch (error) {
+        console.error(error);
       }
     });
 
@@ -158,6 +168,41 @@ module.exports = function Socket(io) {
 
     const handleDisconnect = async (socketId) => {
       console.log(`User with ID ${socketId} disconnected`);
+      const roomId = await findRoomIdBySocketId(socketId, db);
+
+      try {
+        await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .doc(socket.id)
+          .delete();
+      } catch (error) {
+        console.error(error);
+      }
+
+      console.log(`${socket.id} left room ${roomId}`);
+
+      // Get the updated list of active users in the room
+      try {
+        const roomUsersSnapshot = await db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('users')
+          .get();
+
+        const updatedUsers = roomUsersSnapshot.docs.map((doc) => doc.data());
+
+        if (updatedUsers.length === 0) {
+          // If there are no users left in the room, delete the entire room
+          await db.collection('rooms').doc(roomId).delete();
+        } else {
+          // If there are still users in the room, emit the updated list of users
+          io.to(roomId).emit('activeUsers', updatedUsers);
+        }
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     socket.on('disconnect', () => {

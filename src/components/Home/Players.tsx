@@ -6,6 +6,7 @@ import { GiQueenCrown } from 'react-icons/gi';
 import { MdOutlineContentCopy } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { ExtendedUser } from '../../interfaces/user';
+import useUserStore from '../../store/userStore';
 
 type Props = {
   player: ExtendedUser;
@@ -27,6 +28,8 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
   const { photoURL, displayName, stats, socketId } = player;
   const { averageWpm, races } = stats || { averageWpm: 0, races: 0 };
 
+  const [currentUsersSocketId] = useUserStore((state) => [state.socketId]);
+
   const userProgress =
     mode === GameModes.SINGLE_PLAYER
       ? { wpm: soloWpm, accuracy: soloAccuracy }
@@ -43,7 +46,9 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
           delay: delayIdx * 0.2,
         },
       }}
-      className="flex max-w-xs flex-col items-center justify-center m-8 text-center"
+      className={`flex ${
+        currentUsersSocketId === socketId ? 'border-2 border-secondary' : ''
+      } max-w-xs flex-col items-center justify-center p-4 rounded-lg px-8 text-center`}
     >
       <div className="relative w-fit">
         {socketId === owner ? (
@@ -59,12 +64,12 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
       </div>
       <p className="text-base sm:text-xl font-semibold leadi">{displayName}</p>
       {gameStatus === GameStatus.FINISHED || GameStatus.PLAYING ? (
-        <div className="">
-          <p className="dark:text-gray-400">WPM: {wpm}</p>
-          <p className="dark:text-gray-400">Accuracy: {accuracy}</p>
+        <div className="text-xs">
+          <p className="text-gray-400">WPM: {wpm}</p>
+          <p className="text-gray-400">Accuracy: {accuracy}</p>
         </div>
       ) : (
-        <div className="">
+        <div className="text-xs">
           <p className="dark:text-gray-400 whitespace-nowrap">
             Average WPM: {averageWpm}
           </p>
@@ -78,6 +83,7 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
 const Players = () => {
   const [players] = useGameStore((state) => [state.players]);
   const [mode, roomId] = useGameStore((state) => [state.mode, state.roomId]);
+  const [progress] = useGameStore((state) => [state.progress]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -107,9 +113,21 @@ const Players = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-center">
-        {players?.map((players, idx) => (
-          <PlayerCard delayIdx={idx} player={players} />
-        ))}
+        {mode === GameModes.SINGLE_PLAYER
+          ? players.map((players, idx) => (
+              <PlayerCard delayIdx={idx} player={players} />
+            ))
+          : players
+              .sort((player1, player2) => {
+                return progress.get(player2.socketId)?.wpm ||
+                  0 > progress.get(player1.socketId)?.wpm! ||
+                  0
+                  ? 1
+                  : -1;
+              })
+              ?.map((players, idx) => (
+                <PlayerCard delayIdx={idx} player={players} />
+              ))}
       </div>
     </div>
   );
