@@ -1,4 +1,4 @@
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import Logo from '../../assets/Logo.svg';
 import useUserStore from '../../store/userStore';
@@ -7,7 +7,7 @@ import UserProfile from './UserProfile';
 type Props = {};
 
 const Navbar = (props: Props) => {
-  const [signInUser, signOutUser, user] = useUserStore((state) => [
+  const [signInUser, signOutUser] = useUserStore((state) => [
     state.signInUser,
     state.signOutUser,
     state.user,

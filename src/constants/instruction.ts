@@ -23,5 +23,4 @@ export const PLAY_WITH_FRIENDS_MODE_INSTRUCTIONS = [
   'During the test, you can monitor the progress of other participants in your room in real-time.',
   'After the game finishes, the final results for the room will be displayed.',
   'You can see your own typing speed and accuracy, as well as the performance of other players in the same room.',
-
-]
+];

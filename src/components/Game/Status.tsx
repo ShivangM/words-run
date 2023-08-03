@@ -25,16 +25,16 @@ const StatusCard = ({ name, value, Icon }: Props) => {
 
 const Status = () => {
   const [wpm, accuracy, timer] = useGameStore((state) => [
-    state.wpm,
-    state.accuracy,
-    state.timer,
+    state.userProgress?.wpm,
+    state.userProgress?.accuracy,
+    state.room?.timer,
   ]);
 
   return (
     <div className="flex flex-wrap max-w-2xl items-center gap-2 sm:gap-4">
-      <StatusCard name="Words / Min" value={wpm} Icon={BsSpeedometer2} />
-      <StatusCard name="Accuracy" value={accuracy} Icon={BsCheck2Circle} />
-      <StatusCard name="Time Remaining" value={timer} Icon={BiTimeFive} />
+      <StatusCard name="Words / Min" value={wpm || 0} Icon={BsSpeedometer2} />
+      <StatusCard name="Accuracy" value={accuracy || 0} Icon={BsCheck2Circle} />
+      <StatusCard name="Time Remaining" value={timer || 0} Icon={BiTimeFive} />
     </div>
   );
 };

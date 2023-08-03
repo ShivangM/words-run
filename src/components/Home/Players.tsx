@@ -1,39 +1,41 @@
 import { motion } from 'framer-motion';
-import { GameModes, GameStatus } from '../../interfaces/game.d';
+import { GameModes } from '../../interfaces/game.d';
 import useGameStore from '../../store/gameStore';
 import dummyProfile from '../../assets/Dummy Profile.png';
 import { GiQueenCrown } from 'react-icons/gi';
 import { MdOutlineContentCopy } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import { ExtendedUser } from '../../interfaces/user';
 import useUserStore from '../../store/userStore';
+import { User } from '../../interfaces/user';
+import { RoomStatus } from '../../interfaces/room.d';
 
 type Props = {
-  player: ExtendedUser;
+  player: User;
   delayIdx: number;
 };
 
 const PlayerCard = ({ player, delayIdx }: Props) => {
-  const [owner] = useGameStore((state) => [state.owner]);
-  const [gameStatus, progress, soloWpm, soloAccuracy, mode] = useGameStore(
+  const [owner] = useGameStore((state) => [state.room?.owner]);
+  const [roomStatus, progress, soloWpm, soloAccuracy, mode] = useGameStore(
     (state) => [
-      state.gameStatus,
-      state.progress,
-      state.wpm,
-      state.accuracy,
-      state.mode,
+      state.room?.status,
+      state.room?.usersProgress,
+      state.userProgress?.wpm,
+      state.userProgress?.accuracy,
+      state.room?.gameSettings?.mode,
     ]
   );
 
-  const { photoURL, displayName, stats, socketId } = player;
-  const { averageWpm, races } = stats || { averageWpm: 0, races: 0 };
+  const { photoURL, displayName, socketId } = player;
+  const { averageWpm, races } = { averageWpm: 0, races: 0 };
 
-  const [currentUsersSocketId] = useUserStore((state) => [state.socketId]);
+  const [currentUsersSocketId] = useUserStore((state) => [state.user.socketId]);
 
   const userProgress =
     mode === GameModes.SINGLE_PLAYER
       ? { wpm: soloWpm, accuracy: soloAccuracy }
-      : progress.get(socketId);
+      : progress?.find((p) => p.key === socketId)?.value;
+
   const { accuracy, wpm } = userProgress || { accuracy: 0, wpm: 0 };
 
   return (
@@ -51,7 +53,7 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
       } max-w-xs flex-col items-center justify-center p-4 rounded-lg px-8 text-center`}
     >
       <div className="relative w-fit">
-        {socketId === owner ? (
+        {socketId === owner?.socketId ? (
           <div className="absolute bg-secondary rounded-full flex items-center justify-center w-5 h-5 top-0 right-2">
             <GiQueenCrown />
           </div>
@@ -63,7 +65,8 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
         />
       </div>
       <p className="text-base sm:text-xl font-semibold leadi">{displayName}</p>
-      {gameStatus === GameStatus.FINISHED || GameStatus.PLAYING ? (
+      {roomStatus === RoomStatus.FINISHED ||
+      roomStatus === RoomStatus.PLAYING ? (
         <div className="text-xs">
           <p className="text-gray-400">WPM: {wpm}</p>
           <p className="text-gray-400">Accuracy: {accuracy}</p>
@@ -81,9 +84,11 @@ const PlayerCard = ({ player, delayIdx }: Props) => {
 };
 
 const Players = () => {
-  const [players] = useGameStore((state) => [state.players]);
-  const [mode, roomId] = useGameStore((state) => [state.mode, state.roomId]);
-  const [progress] = useGameStore((state) => [state.progress]);
+  const [players] = useGameStore((state) => [state.room?.users]);
+  const [mode, roomId] = useGameStore((state) => [
+    state.room?.gameSettings?.mode,
+    state.room?.roomId,
+  ]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -113,21 +118,9 @@ const Players = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-center">
-        {mode === GameModes.SINGLE_PLAYER
-          ? players.map((players, idx) => (
-              <PlayerCard delayIdx={idx} player={players} />
-            ))
-          : players
-              .sort((player1, player2) => {
-                return progress.get(player2.socketId)?.wpm ||
-                  0 > progress.get(player1.socketId)?.wpm! ||
-                  0
-                  ? 1
-                  : -1;
-              })
-              ?.map((players, idx) => (
-                <PlayerCard key={idx} delayIdx={idx} player={players} />
-              ))}
+        {players?.map((players, idx) => (
+          <PlayerCard delayIdx={idx} player={players} />
+        ))}
       </div>
     </div>
   );

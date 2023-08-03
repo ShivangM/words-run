@@ -2,27 +2,28 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 // import { User } from '../interfaces/user';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, provider } from '../utils/firebase';
+import { auth, db, provider } from '../utils/firebase';
 import dummyImage from '../assets/Dummy Profile.png';
-import { ExtendedUser, InitialUser } from '../interfaces/user.d';
+import { User } from '../interfaces/user.d';
+import { Game } from '../interfaces/game';
+import { toast } from 'react-toastify';
+import { collection, doc, getDoc } from 'firebase/firestore';
 
 interface UserState {
-  socketId: string | null;
-  user: ExtendedUser | InitialUser;
-  setSocketId: (socketId: string | null) => void;
+  user: User;
+  games: Game[];
+  fetchGames: () => void;
+  setSocketId: (socketId: string) => void;
   signInUser: () => void;
   signOutUser: () => void;
-  setUser: (user: ExtendedUser) => void;
   setName: (name: string) => void;
+  setPhoto: (photo: string) => void;
+  setUid: (uid: string) => void;
 }
 
-const initialUser: InitialUser = {
+const initialUser = {
   displayName: 'Guest',
   photoURL: dummyImage,
-  stats: {
-    averageWpm: 0,
-    races: 0,
-  },
 };
 
 const useUserStore = create<UserState>()(
@@ -30,26 +31,56 @@ const useUserStore = create<UserState>()(
     persist(
       (set, get) => ({
         user: initialUser,
-        socketId: null,
+        games: [],
 
-        setUser: (user) => {
-          set({ user });
+        fetchGames: async () => {
+          if (get().user?.uid) {
+            toast.loading('Fetching your previous games', {
+              toastId: 'fetching-previous-games',
+            });
+
+            const usersCollection = collection(db, 'users');
+            const userData = await getDoc(
+              doc(usersCollection, get().user?.uid)
+            );
+            const prevGames = await userData?.data()?.games?.reverse();
+            set({ games: prevGames });
+            toast.dismiss('fetching-previous-games');
+          }
+
+          // else {
+          //   const games = localStorage.getItem('games');
+          //   if (games) {
+          //     set({ games: JSON.parse(games) });
+          //   }
+          // }
         },
 
         setSocketId: (socketId) => {
-          set({ socketId });
+          set((state) => ({ user: { ...state.user, socketId } }));
         },
 
         setName: (name) => {
-          set((state) => ({ user: { ...state.user, displayName: name! } }));
+          set((state) => ({ user: { ...state.user, displayName: name } }));
+        },
+
+        setPhoto: (photo) => {
+          set((state) => ({ user: { ...state.user, photoURL: photo } }));
+        },
+
+        setUid: (uid) => {
+          set((state) => ({ user: { ...state.user, uid } }));
         },
 
         signInUser: async () => {
           await signInWithPopup(auth, provider)
             .then((result) => {
-              const credential =
-                GoogleAuthProvider.credentialFromResult(result);
-              const user = result.user as ExtendedUser;
+              const res = result.user;
+              console.log(res);
+              const user = {
+                displayName: res?.displayName || 'Guest',
+                photoURL: res?.photoURL || dummyImage,
+              };
 
               set({ user });
             })
@@ -64,13 +95,18 @@ const useUserStore = create<UserState>()(
 
         signOutUser: async () => {
           await signOut(auth);
-          set({ user: initialUser });
+          set({ user: initialUser, games: [] });
         },
       }),
       {
         name: 'user-storage',
         getStorage: () => localStorage,
-        partialize: (state) => ({ user: state.user }),
+        partialize: (state) => ({
+          user: {
+            displayName: state.user.displayName,
+            photoURL: state.user.photoURL,
+          },
+        }),
       }
     )
   )

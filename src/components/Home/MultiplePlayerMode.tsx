@@ -6,16 +6,15 @@ type Props = {};
 
 const MultiplePlayerMode = (props: Props) => {
   return (
-    <div className="p-6 space-y-4">
-      <h3 className="text-2xl font-semibold">
-        Multi Player (Coming Soon)
+    <div className="p-6 cursor-not-allowed space-y-4 opacity-60">
+      <h3 className="font-semibold">
+        Multi Player (Comming Soon){' '}
         <span>
-          <BsGlobeAmericas className="inline pl-1" />
-        </span>{' '}
+          <BsGlobeAmericas className="inline" />
+        </span>
       </h3>
-      <button disabled className="disabled:opacity-50 cursor-not-allowed">
-        <GameModeButton mode={GameModes.ONLINE} text="Join Game" />
-      </button>
+
+      <GameModeButton mode={GameModes.ONLINE} text="Join Game" />
     </div>
   );
 };

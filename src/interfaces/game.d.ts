@@ -1,11 +1,3 @@
-import { User } from './user';
-
-export enum GameStatus {
-  WAITING,
-  PLAYING,
-  FINISHED,
-}
-
 export enum GameModes {
   SINGLE_PLAYER,
   ONLINE,
@@ -19,12 +11,15 @@ export enum GameDifficulties {
 }
 
 export enum GameDuration {
-  ONE_MIN = 60,
-  THREE_MIN = 180,
-  FIVE_MIN = 300,
+  ONE_MIN,
+  THREE_MIN,
+  FIVE_MIN,
 }
 
-export interface Progress {
-  wpm: number;
+type Game = {
   accuracy: number;
-}
+  difficulty: number;
+  duration: number;
+  mode: number;
+  wpm: number;
+};

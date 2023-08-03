@@ -1,5 +1,3 @@
-import './App.css';
-
 import Layout from './components/Layout/Layout';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
@@ -8,20 +6,28 @@ import { socket } from './utils/socket';
 import GameSettings from './pages/GameSettings';
 import Game from './pages/Game';
 import useUserStore from './store/userStore';
-import useGameStore from './store/gameStore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { ExtendedUser } from './interfaces/user';
+
+import ReactGA from 'react-ga4';
+ReactGA.initialize(process.env.REACT_APP_MEASUREMENT_ID!);
 
 function App() {
   const [setSocketId] = useUserStore((state) => [state.setSocketId]);
-  const [roomId] = useGameStore((state) => [state.roomId]);
-  const [setUser] = useUserStore((state) => [state.setUser]);
+  const [setName, setPhoto, setUid] = useUserStore((state) => [
+    state.setName,
+    state.setPhoto,
+    state.setUid,
+  ]);
 
   useEffect(() => {
     const auth = getAuth();
 
     const listener = onAuthStateChanged(auth, async (user) => {
-      if (user !== null) setUser(user as ExtendedUser);
+      if (user !== null) {
+        setName(user.displayName ?? 'Guest');
+        setPhoto(user.photoURL ?? '');
+        setUid(user.uid);
+      }
     });
 
     return () => {
@@ -35,7 +41,7 @@ function App() {
     }
 
     function onDisconnect() {
-      setSocketId(null);
+      setSocketId('');
     }
 
     socket.on('connect', onConnect);
@@ -45,6 +51,10 @@ function App() {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
     };
+  }, []);
+
+  useEffect(() => {
+    ReactGA.send({ hitType: 'pageview', page: window.location.pathname });
   }, []);
 
   return (

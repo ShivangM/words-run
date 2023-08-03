@@ -7,10 +7,10 @@ type Props = {};
 const SinglePlayerMode = (props: Props) => {
   return (
     <div className="p-6 space-y-4">
-      <h3 className="text-2xl lg:text-3xl font-semibold">
-        Practice Your Typings{' '}
+      <h3 className="font-semibold">
+        Solo Mode{' '}
         <span>
-          <PiPencilCircleFill className="inline pl-1" />
+          <PiPencilCircleFill className="inline" />
         </span>
       </h3>
 

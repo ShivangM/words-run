@@ -1,6 +1,13 @@
-import { GameModes } from '../interfaces/game.d';
+import {
+  GameDifficulties,
+  GameDuration,
+  GameModes,
+} from '../interfaces/game.d';
 import useGameStore from '../store/gameStore';
 import useGameSettings from '../hooks/useGameSettings';
+import getModeName from '../utils/getModeName';
+import getButtonName from '../utils/getButtonName';
+import getInstructions from '../utils/getInstructions';
 
 const CreateRoom = () => {
   const [setMode, setDuration, setDificulty, loading, mode] = useGameStore(
@@ -9,16 +16,15 @@ const CreateRoom = () => {
       state.setDuration,
       state.setDificulty,
       state.loading,
-      state.mode,
+      state.room?.gameSettings?.mode,
     ]
   );
 
-  const { instructions, buttonName, modeName, handleSubmit } =
-    useGameSettings();
+  const { handleSubmit } = useGameSettings();
 
   return (
-    <div className="">
-      <div className="grid grid-cols-1 max-w-7xl mx-auto lg:grid-cols-2 gap-4 p-6 sm:p-10 h-full lg:h-screen">
+    <div className="max-w-7xl mx-auto p-6 lg:p-10 h-full lg:max-h-[680px] lg:h-screen">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
         <div className="container rounded-xl bg-primary2 mx-auto p-4">
           <div className="space-y-2">
             <h1 className=" text text-secondary text-center text-3xl sm:text-4xl font-bold">
@@ -45,9 +51,9 @@ const CreateRoom = () => {
                     }}
                     className="w-full text-black px-4 py-2 border rounded-md focus:outline-none focus:border-blue-500"
                   >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
+                    <option value={GameDifficulties.EASY}>Easy</option>
+                    <option value={GameDifficulties.MEDIUM}>Medium</option>
+                    <option value={GameDifficulties.HARD}>Hard</option>
                   </select>
                 </div>
 
@@ -64,9 +70,9 @@ const CreateRoom = () => {
                     }}
                     className="w-full text-black px-4 py-2 border rounded-md focus:outline-none focus:border-blue-500"
                   >
-                    <option value={60}>1 Minute</option>
-                    <option value={180}>3 Minutes</option>
-                    <option value={300}>5 Minutes</option>
+                    <option value={GameDuration.ONE_MIN}>1 Minute</option>
+                    <option value={GameDuration.THREE_MIN}>3 Minutes</option>
+                    <option value={GameDuration.FIVE_MIN}>5 Minutes</option>
                   </select>
                 </div>
 
@@ -99,7 +105,7 @@ const CreateRoom = () => {
                   disabled={loading !== null}
                   className="w-full disabled:animate-pulse disabled:cursor-not-allowed text-black bg-secondary2 font-semibold transition-all duration-300 ease-in-out py-2 px-4 rounded-md hover:bg-secondary focus:outline-none focus:bg-secondary"
                 >
-                  {buttonName}
+                  {getButtonName(mode ?? GameModes.SINGLE_PLAYER)}
                 </button>
               </form>
             </div>
@@ -112,13 +118,15 @@ const CreateRoom = () => {
               Instructions
             </h1>
             <p className="text-xl sm:text-xl text-center">
-              {modeName} Mode Instructions
+              {getModeName(mode ?? GameModes.SINGLE_PLAYER)} Mode Instructions
             </p>
           </div>
           <ul className="list-disc text-sm sm:text-base p-0 sm:p-6 space-y-2 list-inside">
-            {instructions.map((instruction) => {
-              return <li className="">{instruction}</li>;
-            })}
+            {getInstructions(mode ?? GameModes.SINGLE_PLAYER).map(
+              (instruction) => {
+                return <li className="">{instruction}</li>;
+              }
+            )}
           </ul>
         </div>
       </div>

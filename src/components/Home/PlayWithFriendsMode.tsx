@@ -10,7 +10,7 @@ const PlayWithFriendsMode = (props: Props) => {
       <h3 className="text-2xl font-semibold">
         Play With Friends{' '}
         <span>
-          <AiOutlineTeam className="inline pl-1" />
+          <AiOutlineTeam className="inline" />
         </span>{' '}
       </h3>
 

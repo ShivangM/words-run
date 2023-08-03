@@ -28,7 +28,12 @@ const calculateWordsPerMinute = (
     ((correctWords / currentWords.length) * 100).toFixed(2)
   );
 
-  return { wordsPerMinute, accuracy, correctWordsArray, incorrectWordsArray };
+  return {
+    wpm: wordsPerMinute,
+    accuracy,
+    correctWordsArray,
+    incorrectWordsArray,
+  };
 };
 
 export default calculateWordsPerMinute;

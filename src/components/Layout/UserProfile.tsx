@@ -7,15 +7,18 @@ const UserProfile = (props: Props) => {
   const [user, setName] = useUserStore((state) => [state.user, state.setName]);
   if (!user) return null;
 
-  const { displayName, photoURL, stats } = user!;
-  const { averageWpm, races } = stats || { averageWpm: 0, races: 0 };
+  const { displayName, photoURL } = user || {
+    displayName: 'Guest',
+    photoURL: dummyImage,
+  };
+  const { averageWpm, races } = { averageWpm: 0, races: 0 };
 
   return (
     <div className="flex items-center space-x-4">
       <div className="flex space-x-4 items-end">
         <img
-          src={photoURL || dummyImage}
-          alt={displayName || 'Guest'}
+          src={photoURL}
+          alt={displayName}
           className="w-12 h-12 rounded-lg"
         />
         <div className="flex flex-col">

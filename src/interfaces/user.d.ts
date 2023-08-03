@@ -1,19 +1,6 @@
-import { User } from 'firebase/auth';
-
-interface ExtendedUser extends User {
-  socketId: string;
-  stats?: {
-    averageWpm: number;
-    races: number;
-  };
-}
-
-interface InitialUser {
-  displayName: string;
+export interface User {
   uid?: string;
+  socketId?: string;
+  displayName: string;
   photoURL: string;
-  stats: {
-    averageWpm: number;
-    races: number;
-  };
 }
