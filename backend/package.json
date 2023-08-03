@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build": "npx tsc",
-    "start": "node dist/server.ts",
+    "start": "node dist/src/server.js",
     "dev": "nodemon src/server.ts",
     "lint": "eslint src/**/*.ts",
     "format": "eslint src/**/*.ts --fix"
