@@ -2,6 +2,7 @@ import { toast } from 'react-toastify';
 import useGameStore from '../../store/gameStore';
 import Status from './Status';
 import { useEffect } from 'react';
+import { RoomStatus } from '../../interfaces/room.d';
 
 type Props = {};
 
@@ -16,11 +17,11 @@ const PlayingScreen = (props: Props) => {
     ]
   );
 
-  useEffect(() => {
-    return () => {
-      resetProgress();
-    };
-  }, []);
+  // useEffect(() => {
+  //   return () => {
+  //     if (room?.status !== RoomStatus.FINISHED) resetProgress();
+  //   };
+  // }, []);
 
   return (
     <div className="space-y-4">
